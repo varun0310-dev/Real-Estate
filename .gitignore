@@ -1,20 +1,41 @@
-# Ignore dependencies
+# ── Dependencies ──────────────────────────────────────────────
 node_modules/
 
-# Ignore production builds
+# ── Production builds ─────────────────────────────────────────
 dist/
 build/
 
-# Ignore environment variables
+# ── Environment variables ─────────────────────────────────────
 .env
+.env.*
+!.env.example
 
-# Ignore logs
+# ── Logs ──────────────────────────────────────────────────────
 *.log
+logs/
 
-# Ignore local IDE/editor config
+# ── MongoDB local data (NEVER commit database files) ──────────
+backend/data/
+
+# ── User-uploaded files ───────────────────────────────────────
+backend/uploads/
+
+# ── Debug / scratch / temp files ──────────────────────────────
+backend/debug_*.json
+backend/repair_output.txt
+backend/permissions.txt
+backend/permissions_utf8.txt
+backend/mongo_boot.log
+
+# ── IDE / Editor ──────────────────────────────────────────────
 .vscode/
 .idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
 
-# Ignore system files
+# ── OS files ──────────────────────────────────────────────────
 .DS_Store
 Thumbs.db
