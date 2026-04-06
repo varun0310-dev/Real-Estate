@@ -1,0 +1,43 @@
+[
+  {
+    "location": {
+      "type": "Point"
+    },
+    "_id": "69a2ecf50fac479236617fca",
+    "name": "Super",
+    "lastname": "Admin",
+    "email": "admin@gmail.com",
+    "password": "$2b$10$ZP4I7e.qcs3b2/9NjXAQPuffCD/IJNw08dmFSPXB617NLSvfP72LC",
+    "isVerified": true,
+    "status": true,
+    "userType": "buyer",
+    "role": "superadmin",
+    "createdAt": "2026-02-28T13:26:13.475Z",
+    "updatedAt": "2026-03-02T08:39:30.471Z",
+    "__v": 0,
+    "about": "",
+    "address": "",
+    "companyName": "",
+    "licenseNumber": "",
+    "phone": "",
+    "profileImage": "/uploads/1772286933258-profileImage.png"
+  },
+  {
+    "location": {
+      "type": "Point"
+    },
+    "_id": "69a2f3200fac479236617fde",
+    "name": "test",
+    "email": "admin1@gmail.com",
+    "password": "$2b$10$FBzEjoyO02dFIrhSN/ye/O5rQStpA9q60dMDejQOhgcZ/FefVMOAi",
+    "isVerified": false,
+    "otp": "345267",
+    "otpExpiresAt": "2026-02-28T14:02:32.498Z",
+    "status": true,
+    "userType": "buyer",
+    "role": "superadmin",
+    "createdAt": "2026-02-28T13:52:32.504Z",
+    "updatedAt": "2026-02-28T13:52:32.504Z",
+    "__v": 0
+  }
+]

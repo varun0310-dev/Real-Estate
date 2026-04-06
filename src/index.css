@@ -1,0 +1,23 @@
+@font-face {
+    font-family: Roboto;
+    src: url("../src/assets/fonts/Roboto-Regular.ttf");
+}
+
+@import "tailwindcss";
+
+@theme {
+    --font-roboto: Roboto, "sans-serif";
+}
+
+body {
+    @apply font-roboto;
+}
+
+/* Hide scrollbar for all elements with this class */
+.hide-scrollbar {
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE/Edge */
+}
+.hide-scrollbar::-webkit-scrollbar {
+  display: none; /* Chrome/Safari */
+}

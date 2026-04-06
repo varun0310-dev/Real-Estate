@@ -1,0 +1,39 @@
+[
+  {
+    "_id": "69ce16e69b4a4648b4c466f7",
+    "title": "Technical lead - frontend",
+    "description": "rwar",
+    "categoryId": "69a6924add243255009bd7ac",
+    "propertyStatus": "For Rent",
+    "price": 322,
+    "yearlyTaxRate": "3",
+    "afterPriceLabel": "4354",
+    "address": "Chandni Chowk, Delhi, India",
+    "zip": "",
+    "neighborhood": "",
+    "latitude": "28.6505331",
+    "longitude": "77.23033699999999",
+    "size": 34,
+    "lotSize": null,
+    "bedrooms": 3,
+    "bathrooms": 2,
+    "yearBuilt": 2212,
+    "garages": 3,
+    "countryId": "69a68bbcbd5515ce6614ed0b",
+    "stateId": "69a68bbcbd5515ce6614f55f",
+    "cityId": "69a68bbdbd5515ce6615e566",
+    "images": [
+      "/uploads/properties/1775113958901-1.png"
+    ],
+    "seller": "69a2ecf50fac479236617fca",
+    "otherRooms": [],
+    "amenities": [
+      "69a69aaa93685dab7afda008"
+    ],
+    "features": [],
+    "state": 1,
+    "createdAt": "2026-04-02T07:12:38.948Z",
+    "updatedAt": "2026-04-02T07:12:38.948Z",
+    "__v": 0
+  }
+]
