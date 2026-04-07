@@ -58,6 +58,8 @@ const MainSection = () => {
                                         if (locationInputRef.current) {
                                             locationInputRef.current.value = cityComp.long_name;
                                         }
+                                        // Auto-trigger search with the detected city
+                                        fetchMarkersWithCity(cityComp.long_name);
                                     }
                                 }
                             });
@@ -115,13 +117,14 @@ const MainSection = () => {
         }
     }, [selectedTab, selectedCategory, isLoaded]);
 
-    const fetchMarkers = async () => {
+    const fetchMarkers = async (cityOverride) => {
         setLoading(true);
+        const locationValue = cityOverride !== undefined ? cityOverride : searchCity;
         try {
             const params = {
                 type: selectedTab,
                 categoryId: selectedCategory,
-                location: searchCity,
+                location: locationValue,
                 q: keyword,
                 limit: 100
             };
@@ -151,7 +154,7 @@ const MainSection = () => {
                         mapRef.current.fitBounds(bounds);
                     }
                 }
-            } else if (!searchCity) {
+            } else if (!locationValue) {
                 if (mapRef.current) mapRef.current.setZoom(12);
             }
         } catch (err) {
@@ -159,6 +162,10 @@ const MainSection = () => {
         } finally {
             setLoading(false);
         }
+    };
+
+    const fetchMarkersWithCity = (city) => {
+        fetchMarkers(city);
     };
 
     const handleSearch = () => {
