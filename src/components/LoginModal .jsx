@@ -1,9 +1,12 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { IoMdClose } from 'react-icons/io';
 import { FiEye, FiEyeOff } from 'react-icons/fi';
+import { FcGoogle } from 'react-icons/fc';
 import axios from 'axios';
 import toast from 'react-hot-toast';
 import { API_URL } from '../config';
+
+const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 
 const LoginModal = ({ onClose }) => {
     const [activeTab, setActiveTab] = useState('signin');
@@ -30,12 +33,104 @@ const LoginModal = ({ onClose }) => {
     const [forgotError, setForgotError] = useState('');
     const [forgotSuccess, setForgotSuccess] = useState('');
 
+    const [googleLoading, setGoogleLoading] = useState(false);
+    const googleInitialized = useRef(false);
+
     useEffect(() => {
         document.body.classList.add('overflow-hidden');
         return () => {
             document.body.classList.remove('overflow-hidden');
         };
     }, []);
+
+    // Google credential callback
+    const handleGoogleCredentialResponse = useCallback(async (response) => {
+        setGoogleLoading(true);
+        try {
+            const res = await axios.post(`${API_URL}/api/auth/google-login`, {
+                credential: response.credential,
+            });
+
+            if (res.status === 200) {
+                localStorage.setItem('token', res.data.token);
+                toast.success('Signed in with Google!');
+                onClose();
+                window.location.reload();
+            }
+        } catch (error) {
+            console.error('Google login error:', error);
+            const msg = error.response?.data?.message || 'Google sign-in failed. Please try again.';
+            toast.error(msg);
+        } finally {
+            setGoogleLoading(false);
+        }
+    }, [onClose]);
+
+    // Load Google Identity Services script
+    useEffect(() => {
+        if (!GOOGLE_CLIENT_ID) {
+            console.warn('VITE_GOOGLE_CLIENT_ID is not set');
+            return;
+        }
+
+        if (googleInitialized.current) return;
+
+        const loadGoogleScript = () => {
+            // Check if already loaded
+            if (window.google?.accounts?.id) {
+                initializeGoogle();
+                return;
+            }
+
+            const script = document.createElement('script');
+            script.src = 'https://accounts.google.com/gsi/client';
+            script.async = true;
+            script.defer = true;
+            script.onload = initializeGoogle;
+            document.head.appendChild(script);
+        };
+
+        const initializeGoogle = () => {
+            if (googleInitialized.current) return;
+            window.google.accounts.id.initialize({
+                client_id: GOOGLE_CLIENT_ID,
+                callback: handleGoogleCredentialResponse,
+                auto_select: false,
+                cancel_on_tap_outside: true,
+            });
+            googleInitialized.current = true;
+        };
+
+        loadGoogleScript();
+    }, [handleGoogleCredentialResponse]);
+
+    const handleGoogleSignIn = () => {
+        if (!window.google?.accounts?.id) {
+            toast.error('Google Sign-In is not ready yet. Please try again.');
+            return;
+        }
+        // Trigger the Google One Tap / Sign-In popup
+        window.google.accounts.id.prompt((notification) => {
+            if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
+                // Fallback: use renderButton approach or popup mode
+                // Try the popup sign-in via google.accounts.oauth2 or just render
+                const btnContainer = document.getElementById('google-signin-btn-hidden');
+                if (btnContainer) {
+                    btnContainer.innerHTML = '';
+                    window.google.accounts.id.renderButton(btnContainer, {
+                        type: 'standard',
+                        size: 'large',
+                        width: 400,
+                    });
+                    // Auto-click the rendered button
+                    setTimeout(() => {
+                        const gBtn = btnContainer.querySelector('[role="button"]') || btnContainer.querySelector('div[role="button"]') || btnContainer.querySelector('iframe');
+                        if (gBtn) gBtn.click();
+                    }, 100);
+                }
+            }
+        });
+    };
 
     const handleLoginChange = (e) => {
         setLoginForm({ ...loginForm, [e.target.name]: e.target.value });
@@ -185,6 +280,32 @@ const LoginModal = ({ onClose }) => {
         }
     };
 
+    // Google sign-in button component
+    const GoogleSignInButton = () => (
+        <div className="mt-1 mb-1">
+            <div className="relative flex items-center justify-center my-4">
+                <div className="flex-grow border-t border-gray-200"></div>
+                <span className="mx-4 text-sm text-gray-400 font-medium whitespace-nowrap">or continue with</span>
+                <div className="flex-grow border-t border-gray-200"></div>
+            </div>
+            <button
+                type="button"
+                onClick={handleGoogleSignIn}
+                disabled={googleLoading}
+                className="w-full flex items-center justify-center gap-3 border-2 border-gray-200 hover:border-[#4960B2] bg-white hover:bg-[#f8f9ff] text-gray-700 font-semibold py-2.5 px-4 rounded-lg cursor-pointer transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed group"
+            >
+                {googleLoading ? (
+                    <div className="w-5 h-5 border-2 border-gray-300 border-t-[#4960B2] rounded-full animate-spin"></div>
+                ) : (
+                    <FcGoogle className="text-xl group-hover:scale-110 transition-transform" />
+                )}
+                <span>{googleLoading ? 'Signing in...' : 'Continue with Google'}</span>
+            </button>
+            {/* Hidden container for fallback Google button rendering */}
+            <div id="google-signin-btn-hidden" className="hidden"></div>
+        </div>
+    );
+
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-opacity-30 backdrop-blur-[2px]">
             <div className="bg-white w-full max-w-[500px] max-h-[95vh] rounded-lg overflow-y-auto p-6 relative">
@@ -262,8 +383,10 @@ const LoginModal = ({ onClose }) => {
                             Sign in
                         </button>
 
+                        <GoogleSignInButton />
+
                         <div className="text-sm text-center pt-2">
-                            Don’t have an account?{' '}
+                            Don't have an account?{' '}
                             <button
                                 type="button"
                                 className="text-[#4960B2] cursor-pointer hover:underline"
@@ -348,6 +471,8 @@ const LoginModal = ({ onClose }) => {
                         <button type="submit" className="w-full cursor-pointer bg-[#4960B2] text-white py-2 rounded transition">
                             Sign up
                         </button>
+
+                        <GoogleSignInButton />
 
                         <div className="text-sm text-center pt-2">
                             Already have an account?{' '}

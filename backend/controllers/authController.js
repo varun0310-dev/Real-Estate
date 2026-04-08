@@ -2,6 +2,7 @@ const User = require('../models/User');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
+const { OAuth2Client } = require('google-auth-library');
 
 exports.register = async (req, res) => {
     const { name, email, password } = req.body;
@@ -40,6 +41,11 @@ exports.login = async (req, res) => {
         const user = await User.findOne({ email });
         if (!user) return res.status(400).json({ message: 'Invalid credentials' });
 
+        // Google-only users don't have a password
+        if (!user.password) {
+            return res.status(400).json({ message: 'This account uses Google Sign-In. Please use the Google button to log in.' });
+        }
+
         const isMatch = await bcrypt.compare(password, user.password);
         if (!isMatch) return res.status(400).json({ message: 'Invalid credentials' });
 
@@ -49,6 +55,7 @@ exports.login = async (req, res) => {
     } catch (err) {
         res.status(500).json({ message: 'Server error' });
     }
+
 };
 
 exports.logout = (req, res) => {
@@ -121,5 +128,57 @@ exports.resetPassword = async (req, res) => {
     } catch (err) {
         console.error("Reset Password Error:", err);
         res.status(500).json({ message: 'Server error' });
+    }
+};
+
+exports.googleLogin = async (req, res) => {
+    const { credential } = req.body;
+
+    if (!credential) {
+        return res.status(400).json({ message: 'Google credential is required' });
+    }
+
+    try {
+        const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+        const ticket = await client.verifyIdToken({
+            idToken: credential,
+            audience: process.env.GOOGLE_CLIENT_ID,
+        });
+
+        const payload = ticket.getPayload();
+        const { sub: googleId, email, name, picture } = payload;
+
+        // Check if user already exists (by googleId or email)
+        let user = await User.findOne({ $or: [{ googleId }, { email }] });
+
+        if (user) {
+            // If user exists by email but was a local account, link Google
+            if (!user.googleId) {
+                user.googleId = googleId;
+                user.authProvider = 'google';
+                if (picture && !user.profileImage) {
+                    user.profileImage = picture;
+                }
+                user.isVerified = true;
+                await user.save();
+            }
+        } else {
+            // Create new user
+            user = new User({
+                name,
+                email,
+                googleId,
+                authProvider: 'google',
+                profileImage: picture || '',
+                isVerified: true,
+            });
+            await user.save();
+        }
+
+        const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '1d' });
+        res.status(200).json({ token });
+    } catch (err) {
+        console.error('Google login error:', err);
+        res.status(401).json({ message: 'Invalid Google credential' });
     }
 };
