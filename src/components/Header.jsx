@@ -7,7 +7,7 @@ import { HiOutlineUserCircle } from 'react-icons/hi';
 import { MdDashboardCustomize } from 'react-icons/md';
 import { RiLogoutBoxRLine, RiLoginBoxLine } from 'react-icons/ri';
 import Dummy from '@assets/loginlogo/dummy.png';
-import Logo from '@assets/logo.svg';
+import DefaultLogo from '@assets/logo.svg';
 import LoginModal from './LoginModal ';
 import { API_URL } from '../config';
 
@@ -17,10 +17,32 @@ const Header = () => {
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
   const [profile, setProfile] = useState(null);
+  const [customLogo, setCustomLogo] = useState(null);
 
   const navigate = useNavigate();
   const location = useLocation();
   const dropdownRef = useRef(null);
+
+  // Fetch custom logo
+  useEffect(() => {
+    const fetchLogo = async () => {
+      try {
+        const res = await axios.get(`${API_URL}/api/settings/logo`);
+        if (res.data.logoUrl) {
+          setCustomLogo(`${API_URL}${res.data.logoUrl}`);
+        } else {
+          setCustomLogo(null);
+        }
+      } catch (err) {
+        console.error('Failed to fetch logo:', err);
+      }
+    };
+    fetchLogo();
+
+    const handleLogoUpdate = () => fetchLogo();
+    window.addEventListener('logoUpdated', handleLogoUpdate);
+    return () => window.removeEventListener('logoUpdated', handleLogoUpdate);
+  }, []);
 
   // Fetch profile if authenticated
   useEffect(() => {
@@ -88,7 +110,7 @@ const Header = () => {
       <div className="container mx-auto px-4 flex items-center justify-between h-[85px] min-h-[85px]">
         {/* Logo */}
         <Link to="/">
-          <img src={Logo} alt="Logo" className="w-[120px]" />
+          <img src={customLogo || DefaultLogo} alt="Logo" className="w-[120px]" onError={(e) => { e.target.src = DefaultLogo; }} />
         </Link>
 
         {/* Desktop Nav */}

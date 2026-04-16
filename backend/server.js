@@ -28,8 +28,17 @@ app.use('/api/properties', require('./routes/propertyRoutes'));
 app.use('/api/locations', require('./routes/locationRoutes'));
 app.use('/api/categories', require('./routes/categoryRoutes'));
 app.use('/api/amenities', require('./routes/amenityRoutes'));
+app.use('/api/settings', require('./routes/settingsRoutes'));
+app.use('/api/roles', require('./routes/roleRoutes'));
+app.use('/api/admin', require('./routes/adminRoutes'));
 console.log('Amenity routes registered');
 console.log('Category routes registered');
+console.log('Settings routes registered');
+console.log('Role & Admin routes registered');
+
+// Seed default roles
+const { seedDefaultRoles } = require('./controllers/roleController');
+seedDefaultRoles();
 
 // Start server
 const PORT = process.env.PORT || 3001;

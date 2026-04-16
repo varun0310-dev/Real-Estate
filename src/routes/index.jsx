@@ -24,6 +24,9 @@ import MyFavorites from "../components/dashboard/MyFav";
 import Reviews from "../components/dashboard/Reviews";
 import MyPackage from "../components/dashboard/MyPackage";
 import MyProfileComp from "../pages/dashboard/MyProfileComp";
+import Settings from "../pages/dashboard/Settings";
+import ManageUsers from "../pages/dashboard/ManageUsers";
+import ManageRoles from "../pages/dashboard/ManageRoles";
 import About from "../pages/About";
 
 function LayoutWrapper({ children }) {
@@ -66,6 +69,9 @@ export default function AppRoutes() {
           <Route path="reviews" element={<Reviews />} />
           <Route path="package" element={<MyPackage />} />
           <Route path="profile" element={<MyProfileComp />} />
+          <Route path="settings" element={<Settings />} />
+          <Route path="manage-users" element={<ManageUsers />} />
+          <Route path="manage-roles" element={<ManageRoles />} />
         </Route>
       </Routes>
     </Router>
