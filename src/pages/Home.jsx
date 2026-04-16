@@ -13,17 +13,17 @@ import DownloadApp from "../components/home/DownloadApp";
 const Home = () => {
   return (
     <div>
-    <MainSection/>
-    <FindPropertiesSection/>
-    <ExploreLatestArrivals/>
-    <WorkWithUs/>
-    <PostYourProperty/>
-    <CommercialSpaces/>
-    <FindHome/>
-    <PeopleSay/>
-    <DownloadApp/>
+      <MainSection />
+      <FindPropertiesSection />
+      <ExploreLatestArrivals />
+      <WorkWithUs />
+      <PostYourProperty />
+      <CommercialSpaces />
+      <FindHome />
+      <PeopleSay />
+      <DownloadApp />
     </div>
-      
+
   )
 }
 

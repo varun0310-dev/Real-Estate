@@ -116,7 +116,7 @@ const ExploreLatestArrivals = () => {
                                     </p>
                                 </div>
 
-                                <button 
+                                <button
                                     className="bg-[#4960B2] text-white h-[38px] md:h-[48px] px-6 text-[12px] md:text-[16px] leading-[27px] rounded-[10px] font-medium hover:bg-[#3a4ea2] transition"
                                     onClick={() => window.location.href = `/properties/${property._id}`}
                                 >

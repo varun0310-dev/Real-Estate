@@ -26,7 +26,7 @@ const testimonials = [
         name: 'Thomas Andrew',
         role: 'Owner Hydrabad',
     },
-     {
+    {
         id: 4,
         message:
             'At the training eclorem sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt. At the training eclorem sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt.',
