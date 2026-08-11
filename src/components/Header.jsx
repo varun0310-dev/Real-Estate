@@ -170,50 +170,81 @@ const Header = () => {
 
           {/* Dropdown */}
           <div
-            className={`absolute -right-9 top-[62px] min-w-[220px] bg-white border border-gray-100 rounded-xl shadow-2xl z-50  transition-all duration-200 ease-out
+            className={`absolute -right-9 top-[62px] min-w-[240px] bg-white border border-gray-100 rounded-2xl shadow-2xl z-50 transition-all duration-200 ease-out overflow-hidden
               ${showDropdown ? 'opacity-100 visible translate-y-0' : 'opacity-0 invisible -translate-y-2'}
             `}
             style={{ boxShadow: '0 8px 32px rgba(60, 72, 88, 0.18)' }}
           >
-            {!isAuthenticated ? (
-              <button
-                className="w-full flex items-center gap-2 px-4 py-2 text-gray-700 hover:bg-[#4960B2] hover:text-white transition-all duration-150 rounded-md"
-                onClick={() => {
-                  setShowLoginModal(true);
-                  setShowDropdown(false);
-                }}
-              >
-                <RiLoginBoxLine className="text-xl" />
-                <span>Login</span>
-              </button>
-            ) : (
-              <>
+            {/* Top: LOGIN / REGISTER (only when NOT logged in) */}
+            {!isAuthenticated && (
+              <div className="px-5 pt-4 pb-3 border-b border-gray-100">
+                <button
+                  className="text-[#0077CC] font-extrabold text-[15px] tracking-wide uppercase hover:text-[#005fa3] transition-colors cursor-pointer"
+                  onClick={() => {
+                    setShowLoginModal(true);
+                    setShowDropdown(false);
+                  }}
+                >
+                  LOGIN / REGISTER
+                </button>
+              </div>
+            )}
+
+            {/* Profile & Dashboard (only when logged in) */}
+            {isAuthenticated && (
+              <div className="py-2 border-b border-gray-100">
                 <Link
                   to="/dashboard/profile"
-                  className="flex items-center gap-2 px-4 py-2 text-gray-700 hover:bg-[#4960B2] hover:text-white transition-all duration-150 rounded-md"
+                  className="flex items-center gap-2 px-5 py-2 text-gray-700 hover:bg-[#4960B2]/5 hover:text-[#4960B2] transition-all duration-150 text-sm font-medium"
                   onClick={() => setShowDropdown(false)}
                 >
-                  <HiOutlineUserCircle className="text-xl" />
+                  <HiOutlineUserCircle className="text-lg" />
                   <span>My Profile</span>
                 </Link>
 
                 <Link
                   to="/dashboard"
-                  className="flex items-center gap-2 px-4 py-2 text-gray-700 hover:bg-[#4960B2] hover:text-white transition-all duration-150 rounded-md"
+                  className="flex items-center gap-2 px-5 py-2 text-gray-700 hover:bg-[#4960B2]/5 hover:text-[#4960B2] transition-all duration-150 text-sm font-medium"
                   onClick={() => setShowDropdown(false)}
                 >
-                  <MdDashboardCustomize className="text-xl" />
+                  <MdDashboardCustomize className="text-lg" />
                   <span>Dashboard</span>
                 </Link>
+              </div>
+            )}
 
+            {/* My Activity Section */}
+            <div className={`px-5 pt-3 ${isAuthenticated ? 'pb-2 border-b border-gray-100' : 'pb-4'}`}>
+              <p className="text-[#1e1e2d] font-bold text-[14px] mb-2">My Activity</p>
+              <div className="flex flex-col gap-1 pl-3">
+                <Link
+                  to="/recently-searched"
+                  className="text-gray-500 text-[13px] hover:text-[#4960B2] transition-colors py-1"
+                  onClick={() => setShowDropdown(false)}
+                >
+                  Recently Searched
+                </Link>
+                <Link
+                  to="/recently-viewed"
+                  className="text-gray-500 text-[13px] hover:text-[#4960B2] transition-colors py-1"
+                  onClick={() => setShowDropdown(false)}
+                >
+                  Recently Viewed
+                </Link>
+              </div>
+            </div>
+
+            {/* Logout at the bottom (only when logged in) */}
+            {isAuthenticated && (
+              <div className="px-5 py-3">
                 <button
                   onClick={handleLogout}
-                  className="w-full flex items-center gap-2 px-4 py-2 text-gray-700 hover:bg-[#4960B2] hover:text-white transition-all duration-150 rounded-md text-left"
+                  className="flex items-center gap-2 text-red-500 font-semibold text-sm hover:text-red-700 transition-colors cursor-pointer w-full"
                 >
-                  <RiLogoutBoxRLine className="text-xl" />
+                  <RiLogoutBoxRLine className="text-lg" />
                   <span>Logout</span>
                 </button>
-              </>
+              </div>
             )}
           </div>
         </div>

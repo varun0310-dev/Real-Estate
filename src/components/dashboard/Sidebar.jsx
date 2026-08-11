@@ -201,11 +201,10 @@ const Sidebar = ({ onNavigate, isCollapsed, setIsCollapsed, userType }) => {
                       toggleMenu(item.name);
                     }
                   }}
-                  className={`w-full text-left flex items-center text-[14px] cursor-pointer gap-3 px-4 py-3 rounded-xl font-bold transition-all ${
-                    isParentOfActive
+                  className={`w-full text-left flex items-center text-[14px] cursor-pointer gap-3 px-4 py-3 rounded-xl font-bold transition-all ${isParentOfActive
                       ? "bg-[#4960B2]/10 text-[#4960B2]"
                       : "text-gray-500 hover:bg-gray-50 hover:text-gray-800"
-                  } ${isCollapsed ? 'justify-center px-0' : ''}`}
+                    } ${isCollapsed ? 'justify-center px-0' : ''}`}
                   title={isCollapsed ? item.name : ""}
                 >
                   <div className="flex-shrink-0">
@@ -224,9 +223,8 @@ const Sidebar = ({ onNavigate, isCollapsed, setIsCollapsed, userType }) => {
                 {/* Sub-menu items */}
                 {!isCollapsed && (
                   <div
-                    className={`overflow-hidden transition-all duration-300 ease-in-out ${
-                      isOpen ? 'max-h-40 opacity-100' : 'max-h-0 opacity-0'
-                    }`}
+                    className={`overflow-hidden transition-all duration-300 ease-in-out ${isOpen ? 'max-h-40 opacity-100' : 'max-h-0 opacity-0'
+                      }`}
                   >
                     <div className="ml-4 pl-4 border-l-2 border-gray-100 mt-1 space-y-1">
                       {item.children.map((child) => {
@@ -235,11 +233,10 @@ const Sidebar = ({ onNavigate, isCollapsed, setIsCollapsed, userType }) => {
                           <button
                             key={child.name}
                             onClick={() => onNavigate(child.path)}
-                            className={`w-full text-left flex items-center text-[13px] cursor-pointer gap-2.5 px-3 py-2.5 rounded-lg font-semibold transition-all ${
-                              isChildActive
+                            className={`w-full text-left flex items-center text-[13px] cursor-pointer gap-2.5 px-3 py-2.5 rounded-lg font-semibold transition-all ${isChildActive
                                 ? "bg-[#4960B2] text-white shadow-md shadow-blue-100"
                                 : "text-gray-500 hover:bg-gray-50 hover:text-gray-800"
-                            }`}
+                              }`}
                           >
                             <div className="flex-shrink-0">
                               <NavIcon name={child.name} isActive={isChildActive} />
@@ -260,11 +257,10 @@ const Sidebar = ({ onNavigate, isCollapsed, setIsCollapsed, userType }) => {
             <button
               key={item.name}
               onClick={() => onNavigate(item.path)}
-              className={`w-full text-left flex items-center text-[14px] cursor-pointer gap-3 px-4 py-3 rounded-xl font-bold transition-all ${
-                isActive
+              className={`w-full text-left flex items-center text-[14px] cursor-pointer gap-3 px-4 py-3 rounded-xl font-bold transition-all ${isActive
                   ? "bg-[#4960B2] text-white shadow-lg shadow-blue-100"
                   : "text-gray-500 hover:bg-gray-50 hover:text-gray-800"
-              } ${isCollapsed ? 'justify-center px-0' : ''}`}
+                } ${isCollapsed ? 'justify-center px-0' : ''}`}
               title={isCollapsed ? item.name : ""}
             >
               <div className="flex-shrink-0">
