@@ -3,6 +3,7 @@ import { FiHeart, FiMapPin, FiHome, FiMaximize } from 'react-icons/fi';
 import { LuBed, LuBath } from 'react-icons/lu';
 import axios from 'axios';
 import { API_URL } from '../../config';
+import { saveRecentView } from '../../hooks/useRecentActivity';
 
 const sortOptions = [
     { value: 'newest', label: 'Newest' },
@@ -85,6 +86,13 @@ const PropertiesSection = ({ filters }) => {
 
     // Sorting local logic or reliance on API sorting
     const displayProperties = properties;
+
+    const handleViewDetail = (item) => {
+        // Track this property view in recent activity
+        saveRecentView(item);
+        // TODO: Navigate to property detail page when it exists
+        // navigate(`/properties/${item._id}`);
+    };
 
     return (
         <div className="md:mx-auto px-5 md:px-4 max-w-screen-xl pb-4 ">
@@ -191,7 +199,7 @@ const PropertiesSection = ({ filters }) => {
                                         <span className="text-xs text-gray-500 flex items-center font-bold uppercase tracking-widest">
                                             <FiHome className="mr-2 text-[#4960B2] text-lg" /> {item.propertyType || item.propertyStatus}
                                         </span>
-                                        <button className="text-sm font-bold text-[#4960B2] hover:underline">View Detail</button>
+                                        <button onClick={() => handleViewDetail(item)} className="text-sm font-bold text-[#4960B2] hover:underline cursor-pointer">View Detail</button>
                                     </div>
                                 </div>
                             </div>
@@ -248,7 +256,7 @@ const PropertiesSection = ({ filters }) => {
                                         <span className="text-xs text-gray-400 flex items-center font-bold uppercase tracking-widest">
                                             <FiHome className="mr-2 text-[#4960B2] text-xl" /> {item.propertyType || item.propertyStatus}
                                         </span>
-                                        <button className="bg-[#4960B2] text-white px-6 py-2.5 rounded-xl text-sm font-bold hover:bg-[#3d5094] transition-all hover:px-8">
+                                        <button onClick={() => handleViewDetail(item)} className="bg-[#4960B2] text-white px-6 py-2.5 rounded-xl text-sm font-bold hover:bg-[#3d5094] transition-all hover:px-8 cursor-pointer">
                                             View Details
                                         </button>
                                     </div>

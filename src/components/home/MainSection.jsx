@@ -3,6 +3,7 @@ import { GoogleMap, useLoadScript, Marker, InfoWindow } from "@react-google-maps
 import axios from "axios";
 import { API_URL } from "../../config";
 import { FiMapPin } from "react-icons/fi";
+import { saveRecentSearch } from "../../hooks/useRecentActivity";
 
 const libraries = ["places"];
 const mapContainerStyle = { width: "100%", height: "600px", borderRadius: "24px" };
@@ -170,6 +171,13 @@ const MainSection = () => {
 
     const handleSearch = () => {
         fetchMarkers();
+        saveRecentSearch({
+            status: selectedTab,
+            query: keyword,
+            location: searchCity,
+            locationLabel: searchCity,
+            categoryId: selectedCategory !== 'all' ? selectedCategory : undefined
+        });
     };
 
     const onMapLoad = (map) => {

@@ -5,6 +5,7 @@ import { FcGoogle } from 'react-icons/fc';
 import axios from 'axios';
 import toast from 'react-hot-toast';
 import { API_URL } from '../config';
+import { syncActivityOnLogin } from '../hooks/useRecentActivity';
 
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 
@@ -53,6 +54,7 @@ const LoginModal = ({ onClose }) => {
 
             if (res.status === 200) {
                 localStorage.setItem('token', res.data.token);
+                await syncActivityOnLogin();
                 toast.success('Signed in with Google!');
                 onClose();
                 window.location.reload();
@@ -172,6 +174,7 @@ const LoginModal = ({ onClose }) => {
 
             if (response.status === 200) {
                 localStorage.setItem('token', response.data.token);
+                await syncActivityOnLogin();
                 toast.success('Login successful!');
                 onClose();
                 window.location.reload();

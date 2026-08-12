@@ -11,6 +11,7 @@ import ForgotPassword from "@pages/ForgotPassword";
 import ResetPassword from "@pages/ResetPassword";
 import VerifyOTP from "@pages/ResetOTP";
 import ContactForm from "../pages/ContactForm";
+import RecentActivity from "../pages/RecentActivity";
 
 // Dashboard Layout & Pages
 import DashboardLayout from "@layouts/DashboardLayout";
@@ -56,6 +57,7 @@ export default function AppRoutes() {
         <Route path="/reset-password/:token" element={<LayoutWrapper><ResetPassword /></LayoutWrapper>} />
         <Route path="/contact-us" element={<LayoutWrapper><ContactForm /></LayoutWrapper>} />
         <Route path="/properties" element={<LayoutWrapper><Properties /></LayoutWrapper>} />
+        <Route path="/recent-activity" element={<LayoutWrapper><RecentActivity /></LayoutWrapper>} />
         <Route path="/verify-otp" element={<LayoutWrapper><VerifyOTP /></LayoutWrapper>} />
 
         {/* Dashboard Routes with Nested Navigation */}

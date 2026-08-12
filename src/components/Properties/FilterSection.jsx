@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { FiSearch, FiRefreshCw } from 'react-icons/fi';
 import axios from 'axios';
 import { API_URL } from '../../config';
+import { saveRecentSearch } from '../../hooks/useRecentActivity';
 
 const FilterSection = ({ filters, setFilters, onSearch, onReset }) => {
     const [localQuery, setLocalQuery] = useState(filters.query);
@@ -71,6 +72,25 @@ const FilterSection = ({ filters, setFilters, onSearch, onReset }) => {
         const updatedFilters = { ...filters, query: localQuery };
         setFilters(updatedFilters);
         onSearch(updatedFilters);
+
+        // Track this search in recent activity
+        // Build a location label from selected city/state/country names
+        const locationLabel = getLocationLabel();
+        saveRecentSearch({ ...updatedFilters, locationLabel });
+    };
+
+    // Helper to get human-readable location from current filter selections
+    const getLocationLabel = () => {
+        const selectedCity = cities.find(c => c._id === filters.cityId);
+        if (selectedCity) return selectedCity.name;
+
+        const selectedState = states.find(s => s._id === filters.stateId);
+        if (selectedState) return selectedState.name;
+
+        const selectedCountry = countries.find(c => c._id === filters.countryId);
+        if (selectedCountry) return selectedCountry.name;
+
+        return '';
     };
 
     const handleResetAll = () => {

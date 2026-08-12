@@ -26,6 +26,7 @@ app.use('/api/profile', require('./routes/profileRoutes'));
 app.use('/api', require('./routes/contactRoutes'));
 app.use('/api/properties', require('./routes/propertyRoutes'));
 app.use('/api/locations', require('./routes/locationRoutes'));
+app.use('/api/activity', require('./routes/activityRoutes'));
 app.use('/api/categories', require('./routes/categoryRoutes'));
 app.use('/api/amenities', require('./routes/amenityRoutes'));
 app.use('/api/settings', require('./routes/settingsRoutes'));

@@ -58,6 +58,12 @@ const Header = () => {
         })
         .then((res) => {
           setProfile(res.data.user);
+          // Initialize recent activity from DB
+          if (res.data.user) {
+              localStorage.setItem('recentSearches', JSON.stringify(res.data.user.recentSearches || []));
+              localStorage.setItem('recentViews', JSON.stringify(res.data.user.recentViews || []));
+              window.dispatchEvent(new CustomEvent('recentActivityUpdated'));
+          }
         })
         .catch((err) => {
           console.error('Profile fetch error:', err);
@@ -218,14 +224,14 @@ const Header = () => {
               <p className="text-[#1e1e2d] font-bold text-[14px] mb-2">My Activity</p>
               <div className="flex flex-col gap-1 pl-3">
                 <Link
-                  to="/recently-searched"
+                  to="/recent-activity?activeTab=SEARCHED"
                   className="text-gray-500 text-[13px] hover:text-[#4960B2] transition-colors py-1"
                   onClick={() => setShowDropdown(false)}
                 >
                   Recently Searched
                 </Link>
                 <Link
-                  to="/recently-viewed"
+                  to="/recent-activity?activeTab=VIEWED"
                   className="text-gray-500 text-[13px] hover:text-[#4960B2] transition-colors py-1"
                   onClick={() => setShowDropdown(false)}
                 >

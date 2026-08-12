@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { FiEye, FiEyeOff } from 'react-icons/fi';
 import { API_URL } from '../../config';
+import { syncActivityOnLogin } from '../../hooks/useRecentActivity';
 
 export default function LoginForm() {
     const [form, setForm] = useState({
@@ -55,6 +56,7 @@ export default function LoginForm() {
 
             if (response.status === 200) {
                 localStorage.setItem("token", response.data.token);
+                await syncActivityOnLogin();
                 navigate('/dashboard/profile');
             } else {
                 setServerError("Login failed. Please check your credentials.");
