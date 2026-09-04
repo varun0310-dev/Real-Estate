@@ -94,6 +94,7 @@ const navItems = [
   { name: "Categories", path: "/dashboard/categories" },
   { name: "Amenities", path: "/dashboard/amenities" },
   { name: "My Properties", path: "/dashboard/my-properties" },
+  { name: "Conversations", path: "/dashboard/conversations" },
   {
     name: "Users & Roles",
     children: [
@@ -148,10 +149,10 @@ const Sidebar = ({ onNavigate, isCollapsed, setIsCollapsed, userType }) => {
 
   const filteredNavItems = navItems.filter((item) => {
     if (userType === "buyer") {
-      return !["Categories", "Amenities", "My Properties", "Settings", "Users & Roles"].includes(item.name);
+      return !["Categories", "Amenities", "My Properties", "Settings", "Users & Roles", "Conversations"].includes(item.name);
     }
-    // Users & Roles and Settings only visible to superadmin
-    if ((item.name === "Settings" || item.name === "Users & Roles") && userType !== "superadmin") {
+    // Users & Roles, Settings, Conversations only visible to superadmin
+    if ((item.name === "Settings" || item.name === "Users & Roles" || item.name === "Conversations") && userType !== "superadmin") {
       return false;
     }
     return true;

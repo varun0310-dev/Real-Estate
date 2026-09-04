@@ -43,4 +43,6 @@ router.put('/:id', authenticate, propertyController.updateProperty);
 router.patch('/:id/status', authenticate, propertyController.updatePropertyStatus);
 router.delete('/:id', authenticate, propertyController.deleteProperty);
 
+router.get('/:id', propertyController.getPropertyById);
+
 module.exports = router;

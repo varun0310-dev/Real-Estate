@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { FiHeart, FiMapPin, FiHome, FiMaximize } from 'react-icons/fi';
 import { LuBed, LuBath } from 'react-icons/lu';
 import axios from 'axios';
@@ -13,6 +14,7 @@ const sortOptions = [
 ];
 
 const PropertiesSection = ({ filters }) => {
+    const navigate = useNavigate();
     const [properties, setProperties] = useState([]);
     const [totalProperties, setTotalProperties] = useState(0);
     const [currentPage, setCurrentPage] = useState(1);
@@ -29,7 +31,7 @@ const PropertiesSection = ({ filters }) => {
                 params: {
                     page: currentPage,
                     limit: itemsPerPage,
-                    type: filters.status, 
+                    type: filters.status,
                     categoryId: filters.propertyTypes.includes('all') ? 'all' : filters.propertyTypes.join(','),
                     countryId: filters.countryId,
                     stateId: filters.stateId,
@@ -61,20 +63,20 @@ const PropertiesSection = ({ filters }) => {
         setCurrentPage(1);
         fetchProperties();
     }, [
-        filters.status, 
-        filters.propertyTypes, 
-        filters.countryId, 
-        filters.stateId, 
+        filters.status,
+        filters.propertyTypes,
+        filters.countryId,
+        filters.stateId,
         filters.cityId,
         filters.location,
-        filters.minPrice, 
-        filters.maxPrice, 
+        filters.minPrice,
+        filters.maxPrice,
         filters.price,
-        filters.bedrooms, 
-        filters.bathrooms, 
-        filters.sqftMin, 
-        filters.sqftMax, 
-        filters.yearMin, 
+        filters.bedrooms,
+        filters.bathrooms,
+        filters.sqftMin,
+        filters.sqftMax,
+        filters.yearMin,
         filters.yearMax,
         filters.query,
         sortBy
@@ -91,7 +93,7 @@ const PropertiesSection = ({ filters }) => {
         // Track this property view in recent activity
         saveRecentView(item);
         // TODO: Navigate to property detail page when it exists
-        // navigate(`/properties/${item._id}`);
+        navigate(`/properties/${item._id}`);
     };
 
     return (

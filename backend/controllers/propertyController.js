@@ -252,3 +252,24 @@ exports.deleteProperty = async (req, res) => {
         res.status(500).json({ message: 'Error deleting property', error: err.message });
     }
 };
+
+exports.getPropertyById = async (req, res) => {
+    try {
+        const property = await Property.findById(req.params.id)
+            .populate('categoryId')
+            .populate('amenities')
+            .populate('seller', 'name lastname email phone companyName profileImage about licenseNumber')
+            .populate('countryId')
+            .populate('stateId')
+            .populate('cityId');
+
+        if (!property) {
+            return res.status(404).json({ message: 'Property not found' });
+        }
+
+        res.json({ property });
+    } catch (err) {
+        console.error('Error fetching property by ID:', err);
+        res.status(500).json({ message: 'Server Error', error: err.message });
+    }
+};

@@ -1,15 +1,22 @@
 import { BrowserRouter as Router, Routes, Route, useLocation } from "react-router-dom";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
+import { useState, useEffect } from "react";
+import axios from "axios";
+import { API_URL } from "../config";
+import SellerChatWidget from "../components/chat/SellerChatWidget";
+import BuyerChatWidget from "../components/chat/BuyerChatWidget";
 
 // Public Pages
 import Home from "@pages/Home";
 import Properties from "../pages/Properties";
+import PropertyDetail from "../pages/PropertyDetail";
 import Login from "@pages/Login";
 import Register from "@pages/Register";
 import ForgotPassword from "@pages/ForgotPassword";
 import ResetPassword from "@pages/ResetPassword";
 import VerifyOTP from "@pages/ResetOTP";
+import MessagesPage from "../pages/MessagesPage";
 import ContactForm from "../pages/ContactForm";
 import RecentActivity from "../pages/RecentActivity";
 
@@ -28,6 +35,7 @@ import MyProfileComp from "../pages/dashboard/MyProfileComp";
 import Settings from "../pages/dashboard/Settings";
 import ManageUsers from "../pages/dashboard/ManageUsers";
 import ManageRoles from "../pages/dashboard/ManageRoles";
+import ManageConversations from "../pages/dashboard/ManageConversations";
 import About from "../pages/About";
 
 function LayoutWrapper({ children }) {
@@ -35,11 +43,27 @@ function LayoutWrapper({ children }) {
   const hideLayoutPaths = ["/login", "/register", "/forgot-password"];
   const shouldHideLayout = hideLayoutPaths.includes(location.pathname);
 
+  const [currentUser, setCurrentUser] = useState(null);
+
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    if (!token) return;
+    axios.get(`${API_URL}/api/profile/me`, {
+      headers: { Authorization: `Bearer ${token}` }
+    }).then(res => {
+      if (res.data?.user) setCurrentUser(res.data.user);
+    }).catch(() => {});
+  }, [location.pathname]);
+
+  const isSellerOrAdmin = currentUser?.userType === 'seller' || currentUser?.userType === 'superadmin';
+
   return (
     <>
       {!shouldHideLayout && <Header />}
       {children}
       {!shouldHideLayout && <Footer />}
+      {!shouldHideLayout && isSellerOrAdmin && <SellerChatWidget currentUser={currentUser} />}
+      {!shouldHideLayout && (currentUser?.userType === 'buyer') && <BuyerChatWidget currentUser={currentUser} />}
     </>
   );
 }
@@ -57,8 +81,10 @@ export default function AppRoutes() {
         <Route path="/reset-password/:token" element={<LayoutWrapper><ResetPassword /></LayoutWrapper>} />
         <Route path="/contact-us" element={<LayoutWrapper><ContactForm /></LayoutWrapper>} />
         <Route path="/properties" element={<LayoutWrapper><Properties /></LayoutWrapper>} />
+        <Route path="/properties/:id" element={<LayoutWrapper><PropertyDetail /></LayoutWrapper>} />
         <Route path="/recent-activity" element={<LayoutWrapper><RecentActivity /></LayoutWrapper>} />
         <Route path="/verify-otp" element={<LayoutWrapper><VerifyOTP /></LayoutWrapper>} />
+        <Route path="/messages" element={<LayoutWrapper><MessagesPage /></LayoutWrapper>} />
 
         {/* Dashboard Routes with Nested Navigation */}
         <Route path="/dashboard" element={<DashboardLayout />}>
@@ -74,6 +100,7 @@ export default function AppRoutes() {
           <Route path="settings" element={<Settings />} />
           <Route path="manage-users" element={<ManageUsers />} />
           <Route path="manage-roles" element={<ManageRoles />} />
+          <Route path="conversations" element={<ManageConversations />} />
         </Route>
       </Routes>
     </Router>

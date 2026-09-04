@@ -1,5 +1,6 @@
-// server.js
 const express = require('express');
+const http = require('http');
+const { Server } = require('socket.io');
 const dotenv = require('dotenv');
 const cors = require('cors');
 const connectDB = require('./config/db');
@@ -10,8 +11,21 @@ dotenv.config();
 // Connect to MongoDB
 connectDB();
 
-// Create app
+// Create app and server
 const app = express();
+const server = http.createServer(app);
+
+// Initialize Socket.IO
+const io = new Server(server, {
+    cors: {
+        origin: process.env.FRONTEND_URL || 'http://localhost:5173',
+        methods: ["GET", "POST"],
+        credentials: true
+    }
+});
+
+const { initializeChatSocket } = require('./sockets/chat.socket');
+initializeChatSocket(io);
 
 // Middleware
 app.use(cors());
@@ -32,6 +46,7 @@ app.use('/api/amenities', require('./routes/amenityRoutes'));
 app.use('/api/settings', require('./routes/settingsRoutes'));
 app.use('/api/roles', require('./routes/roleRoutes'));
 app.use('/api/admin', require('./routes/adminRoutes'));
+app.use('/api/chat', require('./routes/chatRoutes'));
 console.log('Amenity routes registered');
 console.log('Category routes registered');
 console.log('Settings routes registered');
@@ -43,4 +58,4 @@ seedDefaultRoles();
 
 // Start server
 const PORT = process.env.PORT || 3001;
-app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
+server.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
