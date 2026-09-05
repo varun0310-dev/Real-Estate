@@ -42,8 +42,18 @@ export default function MessagesPage() {
                 const convRes = await axios.get(`${API_URL}/api/chat/conversations`, {
                     headers: { Authorization: `Bearer ${token}` }
                 });
-                
                 setConversations(convRes.data.conversations);
+
+                const joinRooms = () => {
+                    convRes.data.conversations.forEach(c => socket.emit('join_conversation', c._id));
+                };
+
+                // Join rooms for all conversations to receive real-time updates
+                if (socket.connected) {
+                    joinRooms();
+                }
+                // Also join on reconnect
+                socket.on('connect', joinRooms);
 
                 // If redirected here with a specific conversation ID, open it
                 const searchParams = new URLSearchParams(location.search);
@@ -57,8 +67,7 @@ export default function MessagesPage() {
 
                 setLoading(false);
 
-                // Listen for new messages across all conversations to update the sidebar preview & unread counts
-                socket.on('new_message', (msg) => {
+                const handleNewMessage = (msg) => {
                     setConversations(prev => {
                         const newConvs = [...prev];
                         const idx = newConvs.findIndex(c => c._id === msg.conversationId);
@@ -77,7 +86,24 @@ export default function MessagesPage() {
                         }
                         return newConvs;
                     });
-                });
+                    
+                    // Play sound
+                    const currentActive = activeConversationRef.current;
+                    if (msg.senderId._id !== user._id && (!currentActive || currentActive._id !== msg.conversationId)) {
+                        try {
+                            const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3');
+                            audio.play().catch(e => console.log('Audio autoplay prevented:', e));
+                        } catch (err) {}
+                    }
+                };
+                
+                socket.on('new_message', handleNewMessage);
+                
+                // Cleanup on unmount
+                return () => {
+                    socket.off('connect', joinRooms);
+                    socket.off('new_message', handleNewMessage);
+                };
 
             } catch (err) {
                 console.error("Error loading chat data", err);

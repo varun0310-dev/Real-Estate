@@ -148,24 +148,48 @@ export default function PropertyDetail() {
                         {/* Image Gallery */}
                         {images && images.length > 0 ? (
                             <div className="mb-8">
-                                <div className="aspect-[16/9] w-full rounded-2xl overflow-hidden mb-4 shadow-sm relative">
-                                    <img 
-                                        src={`${API_URL}${activeImage}`} 
-                                        alt={title} 
-                                        className="w-full h-full object-cover"
-                                    />
+                                <div className="aspect-[16/9] w-full rounded-2xl overflow-hidden mb-4 shadow-sm relative bg-black flex items-center justify-center">
+                                    {activeImage?.match(/\.(mp4|webm|mov|avi)$/i) ? (
+                                        <video 
+                                            src={`${API_URL}${activeImage}`} 
+                                            className="w-full h-full object-cover" 
+                                            controls
+                                            autoPlay
+                                            muted
+                                        />
+                                    ) : (
+                                        <img 
+                                            src={`${API_URL}${activeImage}`} 
+                                            alt={title} 
+                                            className="w-full h-full object-cover"
+                                        />
+                                    )}
                                 </div>
                                 {images.length > 1 && (
                                     <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-hide">
-                                        {images.map((img, idx) => (
+                                        {images.map((img, idx) => {
+                                            const isVideo = img.match(/\.(mp4|webm|mov|avi)$/i);
+                                            return (
                                             <div 
                                                 key={idx} 
                                                 onClick={() => setActiveImage(img)}
-                                                className={`w-24 h-24 flex-shrink-0 rounded-xl overflow-hidden cursor-pointer border-2 transition-all ${activeImage === img ? 'border-[#4960B2]' : 'border-transparent opacity-70 hover:opacity-100'}`}
+                                                className={`relative w-24 h-24 flex-shrink-0 rounded-xl overflow-hidden cursor-pointer border-2 transition-all bg-black ${activeImage === img ? 'border-[#4960B2]' : 'border-transparent opacity-70 hover:opacity-100'}`}
                                             >
-                                                <img src={`${API_URL}${img}`} alt={`Thumbnail ${idx}`} className="w-full h-full object-cover" />
+                                                {isVideo ? (
+                                                    <>
+                                                        <video src={`${API_URL}${img}`} className="w-full h-full object-cover" />
+                                                        <div className="absolute inset-0 flex items-center justify-center bg-black/30 group-hover:bg-black/10 transition-colors">
+                                                            <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-white drop-shadow-md" viewBox="0 0 20 20" fill="currentColor">
+                                                                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clipRule="evenodd" />
+                                                            </svg>
+                                                        </div>
+                                                    </>
+                                                ) : (
+                                                    <img src={`${API_URL}${img}`} alt={`Thumbnail ${idx}`} className="w-full h-full object-cover" />
+                                                )}
                                             </div>
-                                        ))}
+                                            );
+                                        })}
                                     </div>
                                 )}
                             </div>

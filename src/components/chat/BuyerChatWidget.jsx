@@ -40,10 +40,18 @@ export default function BuyerChatWidget({ currentUser }) {
                 setTotalUnread(total);
                 setLoading(false);
 
-                // Join all conversation rooms so we receive messages
-                convs.forEach(c => socket.emit('join_conversation', c._id));
+                const joinRooms = () => {
+                    convs.forEach(c => socket.emit('join_conversation', c._id));
+                };
 
-                socket.on('new_message', (msg) => {
+                // Join all conversation rooms so we receive messages
+                if (socket.connected) {
+                    joinRooms();
+                }
+                // Also join on reconnect
+                socket.on('connect', joinRooms);
+
+                const handleNewMessage = (msg) => {
                     setConversations((prev) => {
                         const newConvs = [...prev];
                         const idx = newConvs.findIndex((c) => c._id === msg.conversationId);
@@ -69,9 +77,23 @@ export default function BuyerChatWidget({ currentUser }) {
                         const current = activeConvRef.current;
                         if (!current || current._id !== msg.conversationId) {
                             setTotalUnread((n) => n + 1);
+                            
+                            // Play sound on new message
+                            try {
+                                const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3');
+                                audio.play().catch(e => console.log('Audio autoplay prevented:', e));
+                            } catch (err) {}
                         }
                     }
-                });
+                };
+
+                socket.on('new_message', handleNewMessage);
+                
+                // Cleanup on unmount
+                return () => {
+                    socket.off('connect', joinRooms);
+                    socket.off('new_message', handleNewMessage);
+                };
             } catch (err) {
                 console.error('BuyerChatWidget load error:', err);
                 setLoading(false);

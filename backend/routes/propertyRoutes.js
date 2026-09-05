@@ -19,10 +19,27 @@ const storage = multer.diskStorage({
         cb(null, uploadDir);
     },
     filename: function (req, file, cb) {
-        cb(null, Date.now() + '-' + file.originalname);
+        cb(null, Date.now() + '-' + file.originalname.replace(/\s+/g, '-'));
     }
 });
-const upload = multer({ storage });
+
+const fileFilter = (req, file, cb) => {
+    const allowedMimeTypes = [
+        'image/jpeg', 'image/png', 'image/webp', 'image/jpg',
+        'video/mp4', 'video/webm', 'video/quicktime', 'video/x-msvideo'
+    ];
+    if (allowedMimeTypes.includes(file.mimetype)) {
+        cb(null, true);
+    } else {
+        cb(new Error('Invalid file type. Only images and videos are allowed.'), false);
+    }
+};
+
+const upload = multer({ 
+    storage,
+    fileFilter,
+    limits: { fileSize: 50 * 1024 * 1024 } // 50MB max per file
+});
 
 router.post('/upload', authenticate, upload.array('images', 10), (req, res) => {
     if (!req.files) return res.status(400).json({ message: 'No files uploaded' });

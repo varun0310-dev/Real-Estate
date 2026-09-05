@@ -733,15 +733,28 @@ const AddNewProperty = ({ onBack, propertyToEdit }) => {
                             <input 
                                 type="file" 
                                 multiple 
-                                accept="image/*" 
+                                accept="image/*,video/mp4,video/webm,video/quicktime" 
                                 onChange={async (e) => {
                                     if(e.target.files && e.target.files.length > 0) {
                                         const files = Array.from(e.target.files);
                                         const validFiles = [];
                                         
                                         for (const file of files) {
-                                            if (file.size > 5 * 1024 * 1024) {
+                                            const isVideo = file.type.startsWith('video/');
+                                            const isImage = file.type.startsWith('image/');
+                                            
+                                            if (!isVideo && !isImage) {
+                                                toast.error(`${file.name} is not a valid image or video.`);
+                                                continue;
+                                            }
+                                            
+                                            if (isImage && file.size > 5 * 1024 * 1024) {
                                                 toast.error(`Image ${file.name} exceeds 5MB size limit.`);
+                                                continue;
+                                            }
+                                            
+                                            if (isVideo && file.size > 50 * 1024 * 1024) {
+                                                toast.error(`Video ${file.name} exceeds 50MB size limit.`);
                                                 continue;
                                             }
                                             
@@ -773,22 +786,36 @@ const AddNewProperty = ({ onBack, propertyToEdit }) => {
                             />
                             <div className="flex flex-col items-center justify-center text-[#3f51b5]">
                                 <HiCloudUpload size={64} className="mb-4 group-hover:scale-110 transition-transform duration-300" />
-                                <p className="text-lg font-bold">Upload Property Photos</p>
+                                <p className="text-lg font-bold">Upload Property Media</p>
                                 <p className="text-sm opacity-70 mt-2 max-w-sm mx-auto">
-                                    Drag and drop or click to upload. Max size 5MB per image. Recommended resolution 1920x1080.
+                                    Drag and drop or click to upload. Images up to 5MB, Videos up to 50MB.
                                 </p>
                             </div>
                         </div>
 
                         {mediaFiles.length > 0 && (
                             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-                                {mediaFiles.map((file, index) => (
-                                    <div key={index} className="relative rounded-lg overflow-hidden border border-gray-200 aspect-video group shadow-sm bg-gray-100">
-                                        <img 
-                                            src={file instanceof File ? URL.createObjectURL(file) : `${API_URL}${file}`} 
-                                            alt="preview" 
-                                            className="w-full h-full object-cover" 
-                                        />
+                                {mediaFiles.map((file, index) => {
+                                    const isFileObj = file instanceof File;
+                                    const isVideo = isFileObj 
+                                        ? file.type.startsWith('video/')
+                                        : file.match(/\.(mp4|webm|mov|avi)$/i);
+                                        
+                                    return (
+                                    <div key={index} className="relative rounded-lg overflow-hidden border border-gray-200 aspect-video group shadow-sm bg-black flex items-center justify-center">
+                                        {isVideo ? (
+                                            <video 
+                                                src={isFileObj ? URL.createObjectURL(file) : `${API_URL}${file}`} 
+                                                className="w-full h-full object-cover" 
+                                                controls
+                                            />
+                                        ) : (
+                                            <img 
+                                                src={isFileObj ? URL.createObjectURL(file) : `${API_URL}${file}`} 
+                                                alt="preview" 
+                                                className="w-full h-full object-cover" 
+                                            />
+                                        )}
                                         <button 
                                             type="button"
                                             onClick={(e) => {
@@ -802,7 +829,8 @@ const AddNewProperty = ({ onBack, propertyToEdit }) => {
                                             </svg>
                                         </button>
                                     </div>
-                                ))}
+                                    );
+                                })}
                             </div>
                         )}
 
