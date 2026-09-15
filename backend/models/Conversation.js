@@ -11,9 +11,12 @@ const conversationSchema = new mongoose.Schema({
     buyerUnreadCount: { type: Number, default: 0 },
     sellerUnreadCount: { type: Number, default: 0 },
     
+    isDeleted: { type: Boolean, default: false },
+    deletedAt: { type: Date },
+    
     status: {
         type: String,
-        enum: ["active", "closed", "blocked"],
+        enum: ["active", "closed", "blocked", "deleted"],
         default: "active"
     }
 }, { timestamps: true });

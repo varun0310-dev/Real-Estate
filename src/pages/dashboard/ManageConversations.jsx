@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { API_URL } from '../../config';
-import { FiMessageSquare, FiSearch, FiEye, FiX } from 'react-icons/fi';
+import { FiMessageSquare, FiSearch, FiEye, FiX, FiTrash2 } from 'react-icons/fi';
 import { format, formatDistanceToNow } from 'date-fns';
+import toast from 'react-hot-toast';
 
 const ManageConversations = () => {
     const [conversations, setConversations] = useState([]);
@@ -11,6 +12,8 @@ const ManageConversations = () => {
     const [selectedConv, setSelectedConv] = useState(null);
     const [messages, setMessages] = useState([]);
     const [messagesLoading, setMessagesLoading] = useState(false);
+    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+    const [isDeleting, setIsDeleting] = useState(false);
 
     const token = localStorage.getItem('token');
     const headers = { Authorization: `Bearer ${token}` };
@@ -47,6 +50,36 @@ const ManageConversations = () => {
     const closeModal = () => {
         setSelectedConv(null);
         setMessages([]);
+        setShowDeleteConfirm(false);
+    };
+
+    const handleDeleteChat = async () => {
+        setIsDeleting(true);
+        try {
+            await axios.delete(`${API_URL}/api/admin/conversations/${selectedConv._id}`, { headers });
+            
+            // Update local state
+            const updatedConv = {
+                ...selectedConv,
+                isDeleted: true,
+                deletedAt: new Date().toISOString(),
+                status: 'deleted'
+            };
+            setSelectedConv(updatedConv);
+            
+            setConversations(prev => prev.map(c => 
+                c._id === selectedConv._id ? updatedConv : c
+            ));
+            
+            setMessages([]);
+            setShowDeleteConfirm(false);
+            toast.success('Conversation deleted successfully');
+        } catch (err) {
+            console.error('Delete chat error:', err);
+            toast.error('Failed to delete conversation');
+        } finally {
+            setIsDeleting(false);
+        }
     };
 
     // Filter conversations by search
@@ -193,11 +226,17 @@ const ManageConversations = () => {
                                             </td>
 
                                             {/* Last Message */}
-                                            <td className="px-6 py-4">
-                                                <div className="text-sm text-gray-600 truncate max-w-[200px]">
-                                                    {conv.lastMessage || <span className="text-gray-300 italic">No messages</span>}
+                                            <td className={`px-6 py-4 ${conv.isDeleted ? 'text-center' : ''}`}>
+                                                <div className={`text-sm text-gray-600 truncate max-w-[200px] ${conv.isDeleted ? 'mx-auto' : ''}`}>
+                                                    {conv.isDeleted ? (
+                                                        <span className="text-gray-300">—</span>
+                                                    ) : conv.lastMessage ? (
+                                                        conv.lastMessage
+                                                    ) : (
+                                                        <span className="text-gray-300 italic">No messages</span>
+                                                    )}
                                                 </div>
-                                                {conv.lastMessageAt && (
+                                                {conv.lastMessageAt && !conv.isDeleted && (
                                                     <div className="text-[10px] text-gray-400 mt-0.5">
                                                         {formatDistanceToNow(new Date(conv.lastMessageAt), { addSuffix: true })}
                                                     </div>
@@ -252,14 +291,60 @@ const ManageConversations = () => {
                                     🏠 {selectedConv.propertyId?.title} — {selectedConv.buyerId?.name} ↔ {selectedConv.sellerId?.name}
                                 </p>
                             </div>
-                            <button onClick={closeModal} className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-white/20 transition-colors">
-                                <FiX size={16} />
-                            </button>
+                            <div className="flex items-center gap-3">
+                                {!selectedConv.isDeleted && (
+                                    <div className="relative">
+                                        <button 
+                                            onClick={() => setShowDeleteConfirm(!showDeleteConfirm)} 
+                                            className="flex items-center gap-1.5 px-3 py-1.5 rounded bg-red-500/20 text-red-100 hover:bg-red-500 hover:text-white transition-colors text-xs font-bold cursor-pointer"
+                                        >
+                                            <FiTrash2 size={14} /> Delete Chat
+                                        </button>
+                                        
+                                        {/* Confirmation Popup */}
+                                        {showDeleteConfirm && (
+                                            <div className="absolute right-0 top-full mt-2 w-64 bg-white rounded-xl shadow-xl border border-gray-100 p-4 z-50 text-gray-800 animate-fadeIn">
+                                                <p className="text-sm font-medium mb-3">Are you sure you want to delete this chat? Once deleted, it cannot be retrieved.</p>
+                                                <div className="flex gap-2 justify-end">
+                                                    <button 
+                                                        onClick={() => setShowDeleteConfirm(false)}
+                                                        className="px-3 py-1.5 rounded-lg text-xs font-bold text-gray-500 hover:bg-gray-100 transition-colors cursor-pointer"
+                                                    >
+                                                        No, Keep
+                                                    </button>
+                                                    <button 
+                                                        onClick={handleDeleteChat}
+                                                        disabled={isDeleting}
+                                                        className="px-3 py-1.5 rounded-lg text-xs font-bold bg-red-500 text-white hover:bg-red-600 transition-colors disabled:opacity-50 cursor-pointer"
+                                                    >
+                                                        {isDeleting ? 'Deleting...' : 'Yes, Delete'}
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
+                                <button onClick={closeModal} className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-white/20 transition-colors">
+                                    <FiX size={16} />
+                                </button>
+                            </div>
                         </div>
 
                         {/* Messages */}
-                        <div className="flex-1 overflow-y-auto p-6 space-y-3 bg-gray-50/60">
-                            {messagesLoading ? (
+                        <div className="flex-1 overflow-y-auto p-6 space-y-3 bg-gray-50/60 relative">
+                            {selectedConv.isDeleted ? (
+                                <div className="absolute inset-0 flex flex-col items-center justify-center bg-gray-50 text-center p-6">
+                                    <div className="w-16 h-16 rounded-full bg-red-100 text-red-500 flex items-center justify-center mb-4">
+                                        <FiTrash2 size={24} />
+                                    </div>
+                                    <p className="text-gray-500 font-medium max-w-sm">
+                                        This conversation was deleted by the super admin on <br />
+                                        <span className="font-bold text-gray-700">
+                                            {selectedConv.deletedAt ? format(new Date(selectedConv.deletedAt), 'dd MMM yyyy, hh:mm a') : 'Unknown Date'}
+                                        </span>
+                                    </p>
+                                </div>
+                            ) : messagesLoading ? (
                                 <div className="text-center text-gray-400 py-10">Loading messages...</div>
                             ) : messages.length === 0 ? (
                                 <div className="text-center text-gray-400 py-10">No messages in this conversation.</div>

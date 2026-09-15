@@ -13,3 +13,25 @@ exports.getAllConversations = async (req, res) => {
         res.status(500).json({ message: 'Server error' });
     }
 };
+
+exports.deleteConversation = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const conversation = await Conversation.findById(id);
+        
+        if (!conversation) {
+            return res.status(404).json({ message: 'Conversation not found' });
+        }
+        
+        conversation.isDeleted = true;
+        conversation.deletedAt = new Date();
+        conversation.status = 'deleted';
+        
+        await conversation.save();
+        
+        res.status(200).json({ message: 'Conversation deleted successfully', conversation });
+    } catch (err) {
+        console.error("Admin delete conversation error:", err);
+        res.status(500).json({ message: 'Server error' });
+    }
+};

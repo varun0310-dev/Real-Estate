@@ -55,7 +55,7 @@ exports.getMyConversations = async (req, res) => {
         const userId = req.user._id;
         const userType = req.user.userType;
         
-        let query = {};
+        let query = { isDeleted: { $ne: true } };
         
         if (userType === 'buyer') {
             // Buyer: show only conversations they started
