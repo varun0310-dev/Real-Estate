@@ -36,6 +36,7 @@ import Settings from "../pages/dashboard/Settings";
 import ManageUsers from "../pages/dashboard/ManageUsers";
 import ManageRoles from "../pages/dashboard/ManageRoles";
 import ManageConversations from "../pages/dashboard/ManageConversations";
+import ManageCoupons from "../pages/dashboard/ManageCoupons";
 import About from "../pages/About";
 
 function LayoutWrapper({ children }) {
@@ -101,6 +102,7 @@ export default function AppRoutes() {
           <Route path="manage-users" element={<ManageUsers />} />
           <Route path="manage-roles" element={<ManageRoles />} />
           <Route path="conversations" element={<ManageConversations />} />
+          <Route path="coupons" element={<ManageCoupons />} />
         </Route>
       </Routes>
     </Router>
