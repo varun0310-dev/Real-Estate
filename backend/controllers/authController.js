@@ -3,6 +3,7 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 const { OAuth2Client } = require('google-auth-library');
+const { assignBasicPlan } = require('./subscriptionController');
 
 exports.register = async (req, res) => {
     const { name, email, password } = req.body;
@@ -173,6 +174,8 @@ exports.googleLogin = async (req, res) => {
                 isVerified: true,
             });
             await user.save();
+            // Auto-assign Basic plan if seller
+            await assignBasicPlan(user._id);
         }
 
         const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '1d' });

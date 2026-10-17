@@ -47,6 +47,7 @@ app.use('/api/settings', require('./routes/settingsRoutes'));
 app.use('/api/roles', require('./routes/roleRoutes'));
 app.use('/api/admin', require('./routes/adminRoutes'));
 app.use('/api/chat', require('./routes/chatRoutes'));
+app.use('/api/subscriptions', require('./routes/subscriptionRoutes'));
 console.log('Amenity routes registered');
 console.log('Category routes registered');
 console.log('Settings routes registered');
@@ -55,6 +56,10 @@ console.log('Role & Admin routes registered');
 // Seed default roles
 const { seedDefaultRoles } = require('./controllers/roleController');
 seedDefaultRoles();
+
+// Start subscription expiry cron
+const { startSubscriptionCron } = require('./cron/subscriptionCron');
+startSubscriptionCron();
 
 // Start server
 const PORT = process.env.PORT || 3001;

@@ -1,6 +1,6 @@
 
-
 const User = require('../models/User');
+const { assignBasicPlan } = require('./subscriptionController');
 
 exports.updateProfile = async (req, res) => {
     try {
@@ -74,6 +74,11 @@ exports.updateProfile = async (req, res) => {
 
         if (!updatedUser) {
             return res.status(404).json({ message: 'User not found' });
+        }
+
+        // Auto-assign Basic plan if user just became a seller
+        if (userType === 'seller') {
+            await assignBasicPlan(updatedUser._id);
         }
 
         res.status(200).json({ message: 'Profile updated', user: updatedUser });

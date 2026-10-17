@@ -1,10 +1,26 @@
 const Property = require('../models/Property');
 const User = require('../models/User');
+const Subscription = require('../models/Subscription');
 const mongoose = require('mongoose');
 
 exports.createProperty = async (req, res) => {
     try {
         const sellerId = req.user._id;
+
+        // Subscription guard: sellers must have an active subscription
+        if (req.user.userType === 'seller') {
+            const activeSub = await Subscription.findOne({
+                seller: sellerId,
+                status: 'active',
+                expiryDate: { $gt: new Date() },
+            });
+            if (!activeSub) {
+                return res.status(403).json({
+                    message: 'Your subscription has expired. Please purchase a package to add new properties.',
+                    subscriptionExpired: true,
+                });
+            }
+        }
 
         const propertyData = { ...req.body };
         propertyData.seller = sellerId;
@@ -221,6 +237,21 @@ exports.updateProperty = async (req, res) => {
             return res.status(403).json({ message: 'Not authorized' });
         }
 
+        // Subscription guard for sellers
+        if (req.user.userType === 'seller') {
+            const activeSub = await Subscription.findOne({
+                seller: req.user._id,
+                status: 'active',
+                expiryDate: { $gt: new Date() },
+            });
+            if (!activeSub) {
+                return res.status(403).json({
+                    message: 'Your subscription has expired. Please purchase a package to edit properties.',
+                    subscriptionExpired: true,
+                });
+            }
+        }
+
         const updateData = { ...req.body };
         
         // Ensure category and location IDs are properly assigned
@@ -244,6 +275,21 @@ exports.deleteProperty = async (req, res) => {
 
         if (req.user.userType !== 'superadmin' && property.seller.toString() !== req.user._id.toString()) {
             return res.status(403).json({ message: 'Not authorized' });
+        }
+
+        // Subscription guard for sellers
+        if (req.user.userType === 'seller') {
+            const activeSub = await Subscription.findOne({
+                seller: req.user._id,
+                status: 'active',
+                expiryDate: { $gt: new Date() },
+            });
+            if (!activeSub) {
+                return res.status(403).json({
+                    message: 'Your subscription has expired. Please purchase a package to delete properties.',
+                    subscriptionExpired: true,
+                });
+            }
         }
 
         await Property.findByIdAndDelete(id);
