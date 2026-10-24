@@ -91,7 +91,7 @@ const ExploreLatestArrivals = () => {
                                         {property.cityId?.name || 'Local Area'}, {property.countryId?.name || 'Bhubaneswar'}
                                     </p>
                                     <p className="font-semibold text-[14px] md:text-[16px] text-black">
-                                        ${property.price?.toLocaleString() || 'Contact for price'}{' '}
+                                        ₹{property.price?.toLocaleString() || 'Contact for price'}{' '}
                                         <span className="text-black/40 text-[12px] md:text-[14px] ml-1">
                                             {property.bedrooms ? `${property.bedrooms} BHK` : ''} {property.propertyType || 'Apartment'}
                                         </span>

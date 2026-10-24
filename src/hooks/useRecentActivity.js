@@ -96,8 +96,8 @@ export async function saveRecentSearch(filters) {
         parts.push(`${filters.bedrooms} BHK`);
     }
     if (filters.minPrice || filters.maxPrice) {
-        const min = filters.minPrice ? `$${Number(filters.minPrice).toLocaleString()}` : '';
-        const max = filters.maxPrice ? `$${Number(filters.maxPrice).toLocaleString()}` : '';
+        const min = filters.minPrice ? `₹${Number(filters.minPrice).toLocaleString()}` : '';
+        const max = filters.maxPrice ? `₹${Number(filters.maxPrice).toLocaleString()}` : '';
         if (min && max) parts.push(`${min}–${max}`);
         else if (min) parts.push(`from ${min}`);
         else if (max) parts.push(`up to ${max}`);

@@ -23,7 +23,8 @@ const ManageCoupons = () => {
         title: '',
         sellerId: '',
         discountType: 'fixed',
-        discountValue: ''
+        discountValue: '',
+        expiresAt: '',
     });
 
     const token = localStorage.getItem('token');
@@ -69,7 +70,10 @@ const ManageCoupons = () => {
                 title: coupon.title,
                 sellerId: coupon.sellerId?._id || coupon.sellerId,
                 discountType: coupon.discountType,
-                discountValue: coupon.discountValue
+                discountValue: coupon.discountValue,
+                expiresAt: coupon.expiresAt
+                    ? new Date(coupon.expiresAt).toISOString().slice(0, 10)
+                    : '',
             });
         } else {
             setEditId(null);
@@ -77,7 +81,8 @@ const ManageCoupons = () => {
                 title: '',
                 sellerId: '',
                 discountType: 'fixed',
-                discountValue: ''
+                discountValue: '',
+                expiresAt: '',
             });
         }
         setIsModalOpen(true);
@@ -93,11 +98,15 @@ const ManageCoupons = () => {
         if (formData.discountType === 'percentage' && formData.discountValue > 100) return toast.error('Percentage discount cannot exceed 100');
 
         try {
+            const payload = {
+                ...formData,
+                expiresAt: formData.expiresAt || null,
+            };
             if (editId) {
-                await axios.put(`${API_URL}/api/admin/coupons/${editId}`, formData, { headers });
+                await axios.put(`${API_URL}/api/admin/coupons/${editId}`, payload, { headers });
                 toast.success('Coupon updated successfully');
             } else {
-                await axios.post(`${API_URL}/api/admin/coupons`, formData, { headers });
+                await axios.post(`${API_URL}/api/admin/coupons`, payload, { headers });
                 toast.success('Coupon created successfully');
             }
             setIsModalOpen(false);
@@ -158,6 +167,7 @@ const ManageCoupons = () => {
                                 <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Title</th>
                                 <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Assigned Seller</th>
                                 <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Discount</th>
+                                <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Expires</th>
                                 <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider text-center">Usage</th>
                                 <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider text-center">Status</th>
                                 <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider text-right">Actions</th>
@@ -165,9 +175,9 @@ const ManageCoupons = () => {
                         </thead>
                         <tbody className="divide-y divide-gray-100">
                             {loading ? (
-                                <tr><td colSpan="6" className="text-center py-10 text-gray-400">Loading coupons...</td></tr>
+                                <tr><td colSpan="7" className="text-center py-10 text-gray-400">Loading coupons...</td></tr>
                             ) : coupons.length === 0 ? (
-                                <tr><td colSpan="6" className="text-center py-10 text-gray-400">No coupons found.</td></tr>
+                                <tr><td colSpan="7" className="text-center py-10 text-gray-400">No coupons found.</td></tr>
                             ) : (
                                 coupons.map((coupon) => (
                                     <tr key={coupon._id} className="hover:bg-gray-50 transition-colors">
@@ -184,6 +194,11 @@ const ManageCoupons = () => {
                                             <div className="text-sm font-bold text-emerald-600">
                                                 {coupon.discountType === 'percentage' ? `${coupon.discountValue}% OFF` : `₹${coupon.discountValue} OFF`}
                                             </div>
+                                        </td>
+                                        <td className="px-6 py-4 text-sm text-gray-600">
+                                            {coupon.expiresAt
+                                                ? new Date(coupon.expiresAt).toLocaleDateString('en-IN')
+                                                : '—'}
                                         </td>
                                         <td className="px-6 py-4 text-center">
                                             <span className={`inline-flex items-center justify-center px-2.5 py-1 rounded-full text-xs font-bold ${coupon.usageCount > 0 ? 'bg-amber-100 text-amber-700' : 'bg-gray-100 text-gray-600'}`}>
@@ -357,6 +372,17 @@ const ManageCoupons = () => {
                                         className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:border-[#4960B2] focus:ring-2 focus:ring-[#4960B2]/20 transition-all text-gray-800 font-medium"
                                     />
                                 </div>
+                            </div>
+
+                            <div>
+                                <label className="block text-sm font-bold text-gray-700 mb-1.5">Expiry date (optional)</label>
+                                <input
+                                    type="date"
+                                    value={formData.expiresAt}
+                                    onChange={(e) => setFormData({ ...formData, expiresAt: e.target.value })}
+                                    className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:border-[#4960B2] focus:ring-2 focus:ring-[#4960B2]/20 transition-all text-gray-800"
+                                />
+                                <p className="text-xs text-gray-400 mt-1">Leave empty for no expiration. Expired coupons are rejected at checkout.</p>
                             </div>
 
                             <div className="pt-4 flex gap-3">

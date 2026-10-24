@@ -681,7 +681,7 @@ const AddNewProperty = ({ onBack, propertyToEdit }) => {
                             </div>
                             <div>
                                 <label className="block text-sm font-bold text-gray-700 mb-2">
-                                    Price ($) <span className="text-red-500">*</span>
+                                    Price (₹) <span className="text-red-500">*</span>
                                 </label>
                                 <input
                                     type="number"

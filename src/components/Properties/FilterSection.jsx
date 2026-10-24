@@ -193,7 +193,7 @@ const FilterSection = ({ filters, setFilters, onSearch, onReset }) => {
                 />
                 <div className="flex items-center justify-between gap-2 mt-2">
                     <div className="relative w-1/2">
-                        <span className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-500">$</span>
+                        <span className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-500">₹</span>
                         <input
                             type="number"
                             placeholder="Min."
@@ -203,7 +203,7 @@ const FilterSection = ({ filters, setFilters, onSearch, onReset }) => {
                         />
                     </div>
                     <div className="relative w-1/2">
-                        <span className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-500">$</span>
+                        <span className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-500">₹</span>
                         <input
                             type="number"
                             placeholder="Max."

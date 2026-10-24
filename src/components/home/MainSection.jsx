@@ -328,7 +328,7 @@ const MainSection = () => {
                                                         Active
                                                     </span>
                                                     <span className="text-[#4960B2] font-black text-sm">
-                                                        ${hoveredMarker.price?.toLocaleString()}
+                                                        ₹{hoveredMarker.price?.toLocaleString()}
                                                     </span>
                                                 </div>
                                                 <h3 className="text-gray-900 font-bold text-sm leading-tight mt-1">

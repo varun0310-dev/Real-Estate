@@ -1,9 +1,10 @@
 const Subscription = require('../models/Subscription');
 const User = require('../models/User');
+const Coupon = require('../models/Coupon');
 const sendEmail = require('../utils/sendEmail');
 const { getSubscriptionWelcomeEmail, getSubscriptionExpiryEmail } = require('../utils/subscriptionEmails');
-
-const PLANS = Subscription.PLANS;
+const { getPlansMap, getPlanByKey } = require('../utils/packagePlans');
+const { validateCouponForCheckout } = require('../utils/couponValidation');
 
 /**
  * Auto-subscribe a seller to Basic (Free) plan on signup / profile update to seller.
@@ -21,7 +22,8 @@ const assignBasicPlan = async (userId) => {
         });
         if (existing) return; // already has active plan
 
-        const plan = PLANS.basic;
+        const plan = await getPlanByKey('basic', { includeInactive: true });
+        if (!plan) return;
         const startDate = new Date();
         const expiryDate = new Date(startDate);
         expiryDate.setDate(expiryDate.getDate() + plan.durationDays);
@@ -71,9 +73,11 @@ exports.getMySubscription = async (req, res) => {
             return res.status(404).json({ message: 'No subscription found' });
         }
 
+        const plans = await getPlansMap();
+
         return res.status(200).json({
             subscription: lastSub,
-            plans: PLANS,
+            plans,
         });
     } catch (err) {
         res.status(500).json({ message: 'Server error', error: err.message });
@@ -81,58 +85,128 @@ exports.getMySubscription = async (req, res) => {
 };
 
 /**
+ * Shared checkout fulfillment after payment (or zero-amount subscribe).
+ */
+async function completeSellerSubscription({
+    sellerId,
+    plan,
+    billingCycle = 'monthly',
+    couponCode,
+    clientAmountPaid,
+}) {
+    const user = await User.findById(sellerId);
+    if (!user || user.userType !== 'seller') {
+        const err = new Error('Only seller accounts can subscribe to packages.');
+        err.status = 403;
+        throw err;
+    }
+
+    const plans = await getPlansMap();
+    if (!plans[plan]) {
+        const err = new Error('Invalid or inactive plan selected');
+        err.status = 400;
+        throw err;
+    }
+
+    const planData = plans[plan];
+    const baseAmount = billingCycle === 'annual'
+        ? (planData.annualPrice || 0)
+        : (planData.monthlyPrice || 0);
+
+    let amountPaid = baseAmount;
+    let appliedCouponCode = null;
+    let couponId = null;
+
+    if (couponCode && String(couponCode).trim()) {
+        const validation = await validateCouponForCheckout({
+            code: couponCode,
+            sellerId,
+            amount: baseAmount,
+            planKey: plan,
+            billingCycle,
+        });
+        if (!validation.valid) {
+            const err = new Error(validation.message);
+            err.status = 400;
+            throw err;
+        }
+        amountPaid = validation.finalAmount;
+        appliedCouponCode = validation.code;
+        couponId = validation.couponId;
+    }
+
+    if (clientAmountPaid !== undefined && clientAmountPaid !== null) {
+        const clientNum = Number(clientAmountPaid);
+        if (Number.isNaN(clientNum) || clientNum !== amountPaid) {
+            const err = new Error('Payment amount does not match the order total. Please refresh checkout and try again.');
+            err.status = 400;
+            throw err;
+        }
+    }
+
+    await Subscription.updateMany(
+        { seller: sellerId, status: 'active' },
+        { status: 'cancelled' }
+    );
+
+    const startDate = new Date();
+    const expiryDate = new Date(startDate);
+    expiryDate.setDate(expiryDate.getDate() + planData.durationDays);
+
+    const subscription = new Subscription({
+        seller: sellerId,
+        plan,
+        billingCycle,
+        status: 'active',
+        startDate,
+        expiryDate,
+        amountPaid,
+        couponCode: appliedCouponCode,
+    });
+    await subscription.save();
+
+    if (couponId) {
+        await Coupon.findByIdAndUpdate(couponId, { $inc: { usageCount: 1 } });
+    }
+
+    const { subject, html } = getSubscriptionWelcomeEmail({
+        name: user.name,
+        plan: planData,
+        expiryDate,
+    });
+    await sendEmail({ to: user.email, subject, html });
+
+    return {
+        message: `Successfully subscribed to ${planData.name}`,
+        subscription,
+        planData,
+    };
+}
+
+exports.completeSellerSubscription = completeSellerSubscription;
+
+/**
  * POST /api/subscriptions/subscribe  — Seller subscribes to a plan
- * Body: { plan: 'standard'|'premium', billingCycle: 'monthly'|'annual' }
+ * Body: { plan, billingCycle, couponCode?, amountPaid? }
  */
 exports.subscribe = async (req, res) => {
     try {
-        const { plan, billingCycle = 'monthly' } = req.body;
-        const sellerId = req.user._id;
-
-        if (!PLANS[plan]) {
-            return res.status(400).json({ message: 'Invalid plan selected' });
-        }
-
-        const planData = PLANS[plan];
-
-        // Expire any current active subscription
-        await Subscription.updateMany(
-            { seller: sellerId, status: 'active' },
-            { status: 'cancelled' }
-        );
-
-        const startDate = new Date();
-        const expiryDate = new Date(startDate);
-        expiryDate.setDate(expiryDate.getDate() + planData.durationDays);
-
-        const amountPaid = billingCycle === 'annual'
-            ? (planData.annualPrice || 0)
-            : (planData.monthlyPrice || 0);
-
-        const subscription = new Subscription({
-            seller: sellerId,
+        const { plan, billingCycle = 'monthly', couponCode, amountPaid: clientAmountPaid } = req.body;
+        const result = await completeSellerSubscription({
+            sellerId: req.user._id,
             plan,
             billingCycle,
-            status: 'active',
-            startDate,
-            expiryDate,
-            amountPaid,
+            couponCode,
+            clientAmountPaid,
         });
-        await subscription.save();
-
-        const user = await User.findById(sellerId);
-        const { subject, html } = getSubscriptionWelcomeEmail({
-            name: user.name,
-            plan: planData,
-            expiryDate,
-        });
-        await sendEmail({ to: user.email, subject, html });
-
         res.status(201).json({
-            message: `Successfully subscribed to ${planData.name}`,
-            subscription,
+            message: result.message,
+            subscription: result.subscription,
         });
     } catch (err) {
+        if (err.status) {
+            return res.status(err.status).json({ message: err.message });
+        }
         console.error('subscribe error:', err.message);
         res.status(500).json({ message: 'Server error', error: err.message });
     }
@@ -142,7 +216,12 @@ exports.subscribe = async (req, res) => {
  * GET /api/subscriptions/plans  — Return available plans (public)
  */
 exports.getPlans = async (req, res) => {
-    res.status(200).json({ plans: PLANS });
+    try {
+        const plans = await getPlansMap();
+        res.status(200).json({ plans });
+    } catch (err) {
+        res.status(500).json({ message: 'Server error', error: err.message });
+    }
 };
 
 /**
@@ -167,4 +246,3 @@ exports.checkSubscription = async (req, res) => {
 
 // Export for cron & controller use
 exports.assignBasicPlan = assignBasicPlan;
-exports.PLANS = PLANS;

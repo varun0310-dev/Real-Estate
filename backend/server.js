@@ -48,6 +48,10 @@ app.use('/api/roles', require('./routes/roleRoutes'));
 app.use('/api/admin', require('./routes/adminRoutes'));
 app.use('/api/chat', require('./routes/chatRoutes'));
 app.use('/api/subscriptions', require('./routes/subscriptionRoutes'));
+app.use('/api/package-settings', require('./routes/packageSettingsRoutes'));
+app.use('/api/coupons', require('./routes/couponRoutes'));
+app.use('/api/payments', require('./routes/paymentRoutes'));
+console.log('Coupon & payment routes registered');
 console.log('Amenity routes registered');
 console.log('Category routes registered');
 console.log('Settings routes registered');
@@ -56,6 +60,9 @@ console.log('Role & Admin routes registered');
 // Seed default roles
 const { seedDefaultRoles } = require('./controllers/roleController');
 seedDefaultRoles();
+
+const { seedPackageSettings } = require('./controllers/packageSettingsController');
+seedPackageSettings();
 
 // Start subscription expiry cron
 const { startSubscriptionCron } = require('./cron/subscriptionCron');

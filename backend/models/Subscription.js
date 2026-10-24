@@ -72,6 +72,12 @@ const subscriptionSchema = new mongoose.Schema({
         type: Number,
         default: 0,
     },
+    couponCode: {
+        type: String,
+        default: null,
+        trim: true,
+        uppercase: true,
+    },
 }, { timestamps: true });
 
 // Virtual: is currently active

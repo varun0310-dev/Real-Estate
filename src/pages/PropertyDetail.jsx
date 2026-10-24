@@ -133,9 +133,9 @@ export default function PropertyDetail() {
                         </div>
                         <div className="text-left md:text-right">
                             <h2 className="text-4xl font-extrabold text-[#4960B2]">
-                                ${price?.toLocaleString()}
+                                ₹{price?.toLocaleString()}
                             </h2>
-                            <p className="text-gray-400 text-sm mt-1">Est. Mortgage: ${(price * 0.005).toLocaleString()}/mo</p>
+                            <p className="text-gray-400 text-sm mt-1">Est. Mortgage: ₹{(price * 0.005).toLocaleString()}/mo</p>
                         </div>
                     </div>
                 </div>

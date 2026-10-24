@@ -125,6 +125,15 @@ const Header = () => {
           <Link to="/properties" className={`${location.pathname === '/properties' ? 'text-[#4960B2]' : ''} hover:text-[#4960B2] transition`}>Properties</Link>
           <Link to="/about-us" className={`${location.pathname === '/about-us' ? 'text-[#4960B2]' : ''} hover:text-[#4960B2] transition`}>About Us</Link>
           <Link to="/contact-us" className={`${location.pathname === '/contact-us' ? 'text-[#4960B2]' : ''} hover:text-[#4960B2] transition`}>Contact Us</Link>
+          {isSeller && (
+            <Link
+              to="/pricing"
+              className={`${location.pathname === '/pricing' ? 'text-[#4960B2]' : ''} hover:text-[#4960B2] transition flex items-center gap-1.5`}
+            >
+              <span className="text-amber-500 text-[10px] font-black bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded-full uppercase tracking-wide">PRO</span>
+              Pricing
+            </Link>
+          )}
         </nav>
 
         {/* Profile Dropdown (Desktop) */}
@@ -270,6 +279,9 @@ const Header = () => {
           <Link to="/properties" className={`block py-2 ${location.pathname === '/properties' ? 'text-[#4960B2]' : ''}`} onClick={() => setMenuOpen(false)}>Properties</Link>
           <Link to="/about-us" className={`block py-2 ${location.pathname === '/about-us' ? 'text-[#4960B2]' : ''}`} onClick={() => setMenuOpen(false)}>About Us</Link>
           <Link to="/contact-us" className={`block py-2 ${location.pathname === '/contact-us' ? 'text-[#4960B2]' : ''}`} onClick={() => setMenuOpen(false)}>Contact Us</Link>
+          {isSeller && (
+            <Link to="/pricing" className={`block py-2 font-bold ${location.pathname === '/pricing' ? 'text-amber-500' : 'text-amber-500'}`} onClick={() => setMenuOpen(false)}>💎 Pricing</Link>
+          )}
           <hr />
           {isAuthenticated ? (
             <button

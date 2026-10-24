@@ -4,7 +4,7 @@ const User = require('../models/User');
 // Create a new coupon
 exports.createCoupon = async (req, res) => {
     try {
-        const { title, sellerId, discountType, discountValue } = req.body;
+        const { title, sellerId, discountType, discountValue, expiresAt } = req.body;
 
         if (!title || !sellerId || !discountType || !discountValue) {
             return res.status(400).json({ message: 'All fields are required' });
@@ -19,7 +19,8 @@ exports.createCoupon = async (req, res) => {
             title,
             sellerId,
             discountType,
-            discountValue
+            discountValue,
+            expiresAt: expiresAt ? new Date(expiresAt) : null,
         });
 
         await coupon.save();
@@ -63,7 +64,7 @@ exports.getCoupons = async (req, res) => {
 exports.updateCoupon = async (req, res) => {
     try {
         const { id } = req.params;
-        const { title, sellerId, discountType, discountValue } = req.body;
+        const { title, sellerId, discountType, discountValue, expiresAt } = req.body;
 
         const coupon = await Coupon.findById(id);
         if (!coupon) {
@@ -85,6 +86,9 @@ exports.updateCoupon = async (req, res) => {
         if (sellerId) coupon.sellerId = sellerId;
         if (discountType) coupon.discountType = discountType;
         if (discountValue) coupon.discountValue = discountValue;
+        if (expiresAt !== undefined) {
+            coupon.expiresAt = expiresAt ? new Date(expiresAt) : null;
+        }
 
         await coupon.save();
         res.status(200).json({ message: 'Coupon updated successfully', coupon });

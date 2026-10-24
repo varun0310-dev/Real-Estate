@@ -2,9 +2,11 @@ import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import { API_URL } from '../../config';
 import DefaultLogo from '@assets/logo.svg';
-import { FiUploadCloud, FiTrash2, FiCheck, FiImage } from 'react-icons/fi';
+import { FiUploadCloud, FiTrash2, FiCheck, FiImage, FiPackage } from 'react-icons/fi';
+import ManagePackages from './ManagePackages';
 
 const Settings = () => {
+    const [activeTab, setActiveTab] = useState('logo');
     const [logoPreview, setLogoPreview] = useState(null);
     const [currentLogo, setCurrentLogo] = useState(null);
     const [selectedFile, setSelectedFile] = useState(null);
@@ -140,15 +142,42 @@ const Settings = () => {
         if (fileInputRef.current) fileInputRef.current.value = '';
     };
 
+    const tabs = [
+        { id: 'logo', label: 'Logo Settings', icon: FiImage },
+        { id: 'packages', label: 'Package Settings', icon: FiPackage },
+    ];
+
     return (
-        <div className="max-w-3xl mx-auto pt-6">
+        <div className={`mx-auto pt-6 ${activeTab === 'packages' ? 'max-w-[1400px] px-4' : 'max-w-3xl'}`}>
             {/* Page Header */}
             <div className="mb-8">
                 <h1 className="text-2xl font-bold text-[#0D1C44] tracking-tight">Settings</h1>
-                <p className="text-gray-400 text-sm mt-1">Manage your site branding and configuration</p>
+                <p className="text-gray-400 text-sm mt-1">Manage site branding and seller pricing packages</p>
             </div>
 
-            {/* Logo Settings Card */}
+            <div className="flex flex-wrap gap-2 mb-8 p-1.5 bg-gray-100 rounded-2xl w-fit">
+                {tabs.map(({ id, label, icon: Icon }) => (
+                    <button
+                        key={id}
+                        type="button"
+                        onClick={() => setActiveTab(id)}
+                        className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold transition-all cursor-pointer ${
+                            activeTab === id
+                                ? 'bg-white text-[#4960B2] shadow-sm'
+                                : 'text-gray-500 hover:text-gray-700'
+                        }`}
+                    >
+                        <Icon className="text-base" />
+                        {label}
+                    </button>
+                ))}
+            </div>
+
+            {activeTab === 'packages' && (
+                <ManagePackages embedded />
+            )}
+
+            {activeTab === 'logo' && (
             <div className="bg-white rounded-2xl shadow-[0_4px_24px_rgba(0,0,0,0.06)] border border-gray-100 overflow-hidden">
                 {/* Card Header */}
                 <div className="px-8 py-5 border-b border-gray-100 bg-gradient-to-r from-[#f8f9ff] to-white">
@@ -323,6 +352,7 @@ const Settings = () => {
                     )}
                 </div>
             </div>
+            )}
         </div>
     );
 };

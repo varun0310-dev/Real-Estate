@@ -3,6 +3,7 @@ const Subscription = require('../models/Subscription');
 const User = require('../models/User');
 const sendEmail = require('../utils/sendEmail');
 const { getSubscriptionExpiryEmail } = require('../utils/subscriptionEmails');
+const { getPlanByKey } = require('../utils/packagePlans');
 
 /**
  * Runs daily at midnight:
@@ -28,7 +29,7 @@ const startSubscriptionCron = () => {
                 await sub.save();
 
                 if (sub.seller && !sub.expiryEmailSent) {
-                    const planData = Subscription.PLANS[sub.plan];
+                    const planData = await getPlanByKey(sub.plan, { includeInactive: true });
                     const { subject, html } = getSubscriptionExpiryEmail({
                         name: sub.seller.name,
                         plan: planData,

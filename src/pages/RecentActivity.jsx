@@ -206,7 +206,7 @@ const RecentActivity = () => {
                                         {/* Details */}
                                         <div className="p-4">
                                             <div className="text-lg font-bold text-[#4960B2] mb-1">
-                                                ${item.price?.toLocaleString()}
+                                                ₹{item.price?.toLocaleString()}
                                             </div>
                                             <h3 className="text-sm font-bold text-[#1e1e2d] truncate mb-1 group-hover:text-[#4960B2] transition-colors">
                                                 {item.title}

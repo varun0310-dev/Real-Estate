@@ -38,6 +38,8 @@ import ManageRoles from "../pages/dashboard/ManageRoles";
 import ManageConversations from "../pages/dashboard/ManageConversations";
 import ManageCoupons from "../pages/dashboard/ManageCoupons";
 import About from "../pages/About";
+import PricingPage from "../pages/PricingPage";
+import CheckoutConsent from "../pages/CheckoutConsent";
 
 function LayoutWrapper({ children }) {
   const location = useLocation();
@@ -86,6 +88,8 @@ export default function AppRoutes() {
         <Route path="/recent-activity" element={<LayoutWrapper><RecentActivity /></LayoutWrapper>} />
         <Route path="/verify-otp" element={<LayoutWrapper><VerifyOTP /></LayoutWrapper>} />
         <Route path="/messages" element={<LayoutWrapper><MessagesPage /></LayoutWrapper>} />
+        <Route path="/pricing" element={<LayoutWrapper><PricingPage /></LayoutWrapper>} />
+        <Route path="/pricing/checkout" element={<LayoutWrapper><CheckoutConsent /></LayoutWrapper>} />
 
         {/* Dashboard Routes with Nested Navigation */}
         <Route path="/dashboard" element={<DashboardLayout />}>

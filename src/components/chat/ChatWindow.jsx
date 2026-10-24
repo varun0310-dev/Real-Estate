@@ -138,7 +138,7 @@ export default function ChatWindow({ conversation, currentUser, onClose }) {
                 <div>
                     <h3 className="font-bold text-[#1e1e2d]">{otherUser?.name} {otherUser?.companyName && `(${otherUser.companyName})`}</h3>
                     <p className="text-xs text-gray-500">
-                        {conversation.propertyId?.title} - ${conversation.propertyId?.price?.toLocaleString()}
+                        {conversation.propertyId?.title} - ₹{conversation.propertyId?.price?.toLocaleString()}
                     </p>
                 </div>
                 {onClose && (

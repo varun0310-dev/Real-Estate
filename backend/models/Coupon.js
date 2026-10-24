@@ -34,7 +34,11 @@ const couponSchema = new mongoose.Schema({
     usageCount: {
         type: Number,
         default: 0
-    }
+    },
+    expiresAt: {
+        type: Date,
+        default: null,
+    },
 }, { timestamps: true });
 
 // Pre-save validation for percentage type

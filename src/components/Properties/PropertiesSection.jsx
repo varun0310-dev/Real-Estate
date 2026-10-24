@@ -164,7 +164,7 @@ const PropertiesSection = ({ filters }) => {
                                         className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
                                     />
                                     <div className="absolute bottom-4 left-4 text-white text-lg font-bold px-4 py-2 rounded-xl bg-[#1e2d5c]/80 backdrop-blur-sm border border-white/10">
-                                        ${item.price?.toLocaleString()}
+                                        ₹{item.price?.toLocaleString()}
                                     </div>
                                     <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-md p-2 rounded-full shadow-lg text-gray-400 hover:text-red-500 cursor-pointer transition-colors">
                                         <FiHeart className="h-5 w-5" />
@@ -225,7 +225,7 @@ const PropertiesSection = ({ filters }) => {
                                         <div className="flex justify-between items-start mb-2">
                                             <h3 className="text-2xl font-bold text-[#1e1e2d] group-hover:text-[#4960B2] transition-colors">{item.title}</h3>
                                             <div className="text-2xl font-black text-[#4960B2]">
-                                                ${item.price?.toLocaleString()}
+                                                ₹{item.price?.toLocaleString()}
                                             </div>
                                         </div>
                                         <p className="text-gray-500 flex items-center mb-6 font-medium">

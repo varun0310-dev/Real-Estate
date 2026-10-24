@@ -7,10 +7,12 @@ import { API_URL } from '../../../config'
 import ConfirmationModal from '../Common/ConfirmationModal'
 import { FaTrashAlt } from 'react-icons/fa'
 import toast from 'react-hot-toast'
-import { useOutletContext, useSearchParams } from 'react-router-dom'
+import { useOutletContext, useSearchParams, useNavigate } from 'react-router-dom'
+import { FiAlertTriangle } from 'react-icons/fi'
 
 const MyProperties = () => {
     const { profile } = useOutletContext()
+    const navigate = useNavigate()
     const [searchParams, setSearchParams] = useSearchParams()
     const [currentPage, setCurrentPage] = useState(1)
     const [showAddForm, setShowAddForm] = useState(searchParams.get('addNew') === 'true')
@@ -20,6 +22,7 @@ const MyProperties = () => {
     const [editingProperty, setEditingProperty] = useState(null)
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
     const [propertyToDelete, setPropertyToDelete] = useState(null)
+    const [subscription, setSubscription] = useState(null)
     const itemsPerPage = 10
 
     const fetchProperties = async () => {
@@ -38,6 +41,17 @@ const MyProperties = () => {
             setLoading(false)
         }
     }
+
+    // Fetch subscription for sellers
+    useEffect(() => {
+        const token = localStorage.getItem('token')
+        if (!token || profile?.userType === 'superadmin') return
+        axios.get(`${API_URL}/api/subscriptions/my`, {
+            headers: { Authorization: `Bearer ${token}` }
+        }).then(res => {
+            setSubscription(res.data.subscription)
+        }).catch(() => {})
+    }, [profile])
 
     const handleStatusUpdate = async (id, status) => {
         try {
@@ -104,17 +118,55 @@ const MyProperties = () => {
     }
 
     const isSuperAdmin = profile?.userType === 'superadmin' || profile?.role === 'superadmin';
+    const isSeller = profile?.userType === 'seller';
+    const hasActiveSubscription = !isSeller || isSuperAdmin || (
+        subscription && subscription.status === 'active' && new Date(subscription.expiryDate) > new Date()
+    );
 
     return (
         <div className="p-6 bg-[#f5f6fa] min-h-screen">
+
+            {/* Subscription Expired Banner for Sellers */}
+            {isSeller && !hasActiveSubscription && (
+                <div className="mb-6 flex flex-col sm:flex-row items-start sm:items-center gap-4 bg-red-50 border-2 border-red-200 rounded-2xl p-5">
+                    <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center flex-shrink-0">
+                            <FiAlertTriangle className="text-red-500 w-5 h-5" />
+                        </div>
+                        <div>
+                            <p className="font-black text-red-700 text-sm">Subscription Expired</p>
+                            <p className="text-xs text-red-500">Your package has expired. You cannot add, edit, or delete properties until you renew your subscription.</p>
+                        </div>
+                    </div>
+                    <button
+                        onClick={() => navigate('/pricing')}
+                        className="sm:ml-auto bg-red-500 hover:bg-red-600 text-white text-xs font-black px-5 py-2 rounded-xl transition whitespace-nowrap"
+                    >
+                        Renew Package →
+                    </button>
+                </div>
+            )}
+
             <div className="flex justify-between items-center mb-6">
                 <h2 className="text-xl font-bold text-[#1e1e2d]">{isSuperAdmin ? 'Managed Properties' : 'My Properties'}</h2>
-                <button
-                    className="bg-[#3f51b5] text-white px-4 py-2 rounded hover:bg-[#334296] transition cursor-pointer"
-                    onClick={() => setShowAddForm(true)} 
-                >
-                    Add New Property
-                </button>
+                <div className="relative group">
+                    <button
+                        className={`px-4 py-2 rounded transition text-sm font-bold ${
+                            hasActiveSubscription
+                                ? 'bg-[#3f51b5] text-white hover:bg-[#334296] cursor-pointer'
+                                : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                        }`}
+                        onClick={() => hasActiveSubscription && setShowAddForm(true)}
+                        disabled={!hasActiveSubscription}
+                    >
+                        Add New Property
+                    </button>
+                    {!hasActiveSubscription && (
+                        <div className="absolute right-0 top-full mt-2 bg-[#1e1e2d] text-white text-xs rounded-xl px-3 py-2 whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity z-10 shadow-lg">
+                            ⚠️ Renew your package to add properties
+                        </div>
+                    )}
+                </div>
             </div>
 
             <div className="bg-white rounded-lg shadow overflow-x-auto">
@@ -174,7 +226,7 @@ const MyProperties = () => {
                                             {property.propertyType || 'N/A'}
                                         </span>
                                     </td>
-                                    <td className="p-4 text-[#1e1e2d] font-black">${property.price?.toLocaleString() || 0}</td>
+                                    <td className="p-4 text-[#1e1e2d] font-black">₹{property.price?.toLocaleString() || 0}</td>
                                     <td className="p-4 text-gray-600 whitespace-nowrap">{property.createdAt ? new Date(property.createdAt).toLocaleDateString() : 'N/A'}</td>
                                     <td className="p-4 text-center">
                                         {isSuperAdmin ? (
@@ -203,18 +255,29 @@ const MyProperties = () => {
                                     </td>
                                     <td className="p-4 text-center">
                                         <div className="flex items-center justify-center gap-2">
-                                            {/* <button className="bg-[#ccf6e4] text-[#34c38f] p-2 rounded hover:bg-[#b5e9d4] transition cursor-pointer shadow-sm">
-                                                <FaEye size={12} />
-                                            </button> */}
+                                            {/* Edit button */}
                                             <button 
-                                                className="bg-[#e0e7ff] text-[#5b73e8] p-2 rounded hover:bg-[#d0dbfc] transition cursor-pointer shadow-sm"
-                                                onClick={() => setEditingProperty(property)}
+                                                className={`p-2 rounded transition shadow-sm ${
+                                                    hasActiveSubscription
+                                                        ? 'bg-[#e0e7ff] text-[#5b73e8] hover:bg-[#d0dbfc] cursor-pointer'
+                                                        : 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                                                }`}
+                                                onClick={() => hasActiveSubscription && setEditingProperty(property)}
+                                                disabled={!hasActiveSubscription}
+                                                title={!hasActiveSubscription ? 'Renew your subscription to edit' : 'Edit'}
                                             >
                                                 <FaEdit size={12} />
                                             </button>
+                                            {/* Delete button */}
                                             <button 
-                                                className="bg-[#ffe2e5] text-[#f46a6a] p-2 rounded hover:bg-[#fcd1d6] transition cursor-pointer shadow-sm"
-                                                onClick={() => handleDeleteClick(property)}
+                                                className={`p-2 rounded transition shadow-sm ${
+                                                    hasActiveSubscription
+                                                        ? 'bg-[#ffe2e5] text-[#f46a6a] hover:bg-[#fcd1d6] cursor-pointer'
+                                                        : 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                                                }`}
+                                                onClick={() => hasActiveSubscription && handleDeleteClick(property)}
+                                                disabled={!hasActiveSubscription}
+                                                title={!hasActiveSubscription ? 'Renew your subscription to delete' : 'Delete'}
                                             >
                                                 <FaTrash size={12} />
                                             </button>
