@@ -10,6 +10,14 @@ const SUPERADMIN_ONLY_ROUTES = [
   '/dashboard/settings',
   '/dashboard/manage-users',
   '/dashboard/manage-roles',
+  '/dashboard/subscriptions',
+  '/dashboard/coupons',
+  '/dashboard/conversations',
+];
+
+const SELLER_ONLY_ROUTES = [
+  '/dashboard/package',
+  '/dashboard/transactions',
 ];
 
 const DashboardLayout = () => {
@@ -54,19 +62,19 @@ const DashboardLayout = () => {
     if (!profile) return;
 
     const isSuperAdminRoute = SUPERADMIN_ONLY_ROUTES.includes(location.pathname);
+    const isSellerRoute = SELLER_ONLY_ROUTES.includes(location.pathname);
     const isSuperAdmin = profile.userType === 'superadmin';
+    const isSeller = profile.userType === 'seller';
 
-    if (isSuperAdminRoute && !isSuperAdmin) {
+    if ((isSuperAdminRoute && !isSuperAdmin) || (isSellerRoute && !isSeller)) {
       setAccessDenied(true);
-      // Redirect to dashboard after brief delay to show the message
       const timer = setTimeout(() => {
         navigate('/dashboard');
         setAccessDenied(false);
       }, 2000);
       return () => clearTimeout(timer);
-    } else {
-      setAccessDenied(false);
     }
+    setAccessDenied(false);
   }, [location.pathname, profile, navigate]);
 
   if (loading) return <div className="p-6">Loading...</div>;

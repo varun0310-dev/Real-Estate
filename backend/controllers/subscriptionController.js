@@ -191,6 +191,10 @@ exports.completeSellerSubscription = completeSellerSubscription;
  */
 exports.subscribe = async (req, res) => {
     try {
+        if (req.user.userType !== 'seller') {
+            return res.status(403).json({ message: 'Only sellers can subscribe to packages.' });
+        }
+
         const { plan, billingCycle = 'monthly', couponCode, amountPaid: clientAmountPaid } = req.body;
         const result = await completeSellerSubscription({
             sellerId: req.user._id,

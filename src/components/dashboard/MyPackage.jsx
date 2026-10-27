@@ -203,6 +203,16 @@ const MyPackage = () => {
                         </div>
                     )}
 
+                    <div className="mb-6 flex justify-end">
+                        <button
+                            type="button"
+                            onClick={() => navigate('/dashboard/transactions')}
+                            className="text-sm font-bold text-[#4960B2] hover:underline"
+                        >
+                            View transaction history →
+                        </button>
+                    </div>
+
                     {/* Upgrade CTA */}
                     <div className="bg-gradient-to-br from-[#f0f4ff] to-white border border-[#4960B2]/20 rounded-2xl p-6">
                         <div className="flex items-center justify-between">

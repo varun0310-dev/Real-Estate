@@ -37,6 +37,8 @@ import ManageUsers from "../pages/dashboard/ManageUsers";
 import ManageRoles from "../pages/dashboard/ManageRoles";
 import ManageConversations from "../pages/dashboard/ManageConversations";
 import ManageCoupons from "../pages/dashboard/ManageCoupons";
+import MyTransactions from "../components/dashboard/MyTransactions";
+import ManageSubscriptions from "../pages/dashboard/ManageSubscriptions";
 import About from "../pages/About";
 import PricingPage from "../pages/PricingPage";
 import CheckoutConsent from "../pages/CheckoutConsent";
@@ -101,6 +103,8 @@ export default function AppRoutes() {
           <Route path="favorites" element={<MyFavorites />} />
           <Route path="reviews" element={<Reviews />} />
           <Route path="package" element={<MyPackage />} />
+          <Route path="transactions" element={<MyTransactions />} />
+          <Route path="subscriptions" element={<ManageSubscriptions />} />
           <Route path="profile" element={<MyProfileComp />} />
           <Route path="settings" element={<Settings />} />
           <Route path="manage-users" element={<ManageUsers />} />
