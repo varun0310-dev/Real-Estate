@@ -132,16 +132,6 @@ const NavIcon = ({ name, isActive }) => {
 // Define navigation structure with sub-items support
 const navItems = [
   { name: "Dashboard", path: "/dashboard" },
-  { name: "Categories", path: "/dashboard/categories" },
-  { name: "Amenities", path: "/dashboard/amenities" },
-  { name: "My Properties", path: "/dashboard/my-properties" },
-  { name: "My Package", path: "/dashboard/package", sellerOnly: true },
-  { name: "Transactions", path: "/dashboard/transactions" },
-  { name: "Subscriptions", path: "/dashboard/subscriptions", superadminOnly: true },
-  { name: "Messages", path: "/dashboard/messages" },
-  { name: "My Favorites", path: "/dashboard/favorites" },
-  { name: "Conversations", path: "/dashboard/conversations", superadminOnly: true },
-  { name: "Coupon Management", path: "/dashboard/coupons", superadminOnly: true },
   {
     name: "Users & Roles",
     children: [
@@ -149,6 +139,16 @@ const navItems = [
       { name: "Manage Roles", path: "/dashboard/manage-roles" },
     ],
   },
+  { name: "Categories", path: "/dashboard/categories" },
+  { name: "Amenities", path: "/dashboard/amenities" },
+  { name: "My Properties", path: "/dashboard/my-properties" },
+  { name: "My Package", path: "/dashboard/package", sellerOnly: true },
+  { name: "Transactions", path: "/dashboard/transactions", sellerOnly: true },
+  { name: "Subscriptions", path: "/dashboard/subscriptions", superadminOnly: true },
+  { name: "Messages", path: "/dashboard/messages" },
+  { name: "My Favorites", path: "/dashboard/favorites" },
+  { name: "Conversations", path: "/dashboard/conversations", superadminOnly: true },
+  { name: "Coupon Management", path: "/dashboard/coupons", superadminOnly: true },
   { name: "Settings", path: "/dashboard/settings" },
   { name: "My Profile", path: "/dashboard/profile" },
   { name: "Logout", path: "/login" },
@@ -195,14 +195,14 @@ const Sidebar = ({ onNavigate, isCollapsed, setIsCollapsed, userType }) => {
   };
 
   const filteredNavItems = navItems.filter((item) => {
-    if (userType === "buyer") {
+    const role = String(userType || "").toLowerCase();
+    if (role === "buyer") {
       return ["Dashboard", "Messages", "My Favorites", "My Profile", "Logout"].includes(item.name);
     }
-    if (userType === "seller") {
+    if (role === "seller") {
       return ["Dashboard", "My Properties", "My Package", "Transactions", "Messages", "My Favorites", "My Profile", "Logout"].includes(item.name);
     }
-    if (userType === "superadmin") {
-      // Hide My Package, Messages, Transactions, and My Favorites for Super Admin
+    if (role === "superadmin") {
       return !["My Package", "Messages", "Transactions", "My Favorites"].includes(item.name);
     }
     return true;

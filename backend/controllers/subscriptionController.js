@@ -1,6 +1,7 @@
 const Subscription = require('../models/Subscription');
 const User = require('../models/User');
 const Coupon = require('../models/Coupon');
+const Payment = require('../models/Payment');
 const sendEmail = require('../utils/sendEmail');
 const { getSubscriptionWelcomeEmail, getSubscriptionExpiryEmail } = require('../utils/subscriptionEmails');
 const { getPlansMap, getPlanByKey } = require('../utils/packagePlans');
@@ -38,6 +39,21 @@ const assignBasicPlan = async (userId) => {
             amountPaid: 0,
         });
         await subscription.save();
+
+        await Payment.create({
+            seller: userId,
+            subscription: subscription._id,
+            razorpayOrderId: `local_${subscription._id}`,
+            plan: 'basic',
+            planName: plan.name || 'Basic',
+            billingCycle: 'monthly',
+            baseAmount: 0,
+            discountAmount: 0,
+            finalAmount: 0,
+            couponCode: null,
+            status: 'paid',
+            paidAt: startDate,
+        });
 
         // Send welcome email
         const { subject, html } = getSubscriptionWelcomeEmail({
@@ -93,6 +109,7 @@ async function completeSellerSubscription({
     billingCycle = 'monthly',
     couponCode,
     clientAmountPaid,
+    recordLocalPayment = true,
 }) {
     const user = await User.findById(sellerId);
     if (!user || user.userType !== 'seller') {
@@ -167,6 +184,30 @@ async function completeSellerSubscription({
         referralSeller: referrerSellerId,
     });
     await subscription.save();
+
+    if (recordLocalPayment) {
+        const existingPaid = await Payment.findOne({
+            seller: sellerId,
+            subscription: subscription._id,
+            status: 'paid',
+        });
+        if (!existingPaid) {
+            await Payment.create({
+                seller: sellerId,
+                subscription: subscription._id,
+                razorpayOrderId: `local_${subscription._id}`,
+                plan,
+                planName: planData.name || plan,
+                billingCycle,
+                baseAmount,
+                discountAmount: Math.max(0, baseAmount - amountPaid),
+                finalAmount: amountPaid,
+                couponCode: appliedCouponCode,
+                status: 'paid',
+                paidAt: startDate,
+            });
+        }
+    }
 
     if (couponId) {
         await Coupon.findByIdAndUpdate(couponId, {

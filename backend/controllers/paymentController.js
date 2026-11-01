@@ -272,6 +272,7 @@ exports.verifyRazorpayPayment = async (req, res) => {
             billingCycle,
             couponCode,
             clientAmountPaid: finalAmount,
+            recordLocalPayment: false,
         });
 
         // ── Update payment record ──
@@ -323,10 +324,34 @@ exports.verifyRazorpayPayment = async (req, res) => {
 exports.getMyTransactions = async (req, res) => {
     try {
         const isSuperadmin = req.user.userType === 'superadmin' || req.user.role === 'superadmin';
-        const isSeller = req.user.userType === 'seller';
+        const isSeller = req.user.userType === 'seller' || req.user.role === 'seller';
 
         if (!isSuperadmin && !isSeller) {
             return res.status(403).json({ message: 'Only sellers and superadmins can view transactions.' });
+        }
+
+        if (isSeller && !isSuperadmin) {
+            const Subscription = require('../models/Subscription');
+            const subs = await Subscription.find({ seller: req.user._id }).select('_id seller plan billingCycle amountPaid couponCode startDate createdAt');
+            for (const sub of subs) {
+                const exists = await Payment.findOne({ $or: [{ subscription: sub._id }, { razorpayOrderId: `local_${sub._id}` }] });
+                if (exists) continue;
+                const planName = sub.plan ? sub.plan.charAt(0).toUpperCase() + sub.plan.slice(1) : 'Plan';
+                await Payment.create({
+                    seller: sub.seller,
+                    subscription: sub._id,
+                    razorpayOrderId: `local_${sub._id}`,
+                    plan: sub.plan,
+                    planName,
+                    billingCycle: sub.billingCycle || 'monthly',
+                    baseAmount: sub.amountPaid || 0,
+                    discountAmount: 0,
+                    finalAmount: sub.amountPaid || 0,
+                    couponCode: sub.couponCode || null,
+                    status: 'paid',
+                    paidAt: sub.startDate || sub.createdAt,
+                });
+            }
         }
 
         const page = Math.max(1, parseInt(req.query.page) || 1);
@@ -335,7 +360,7 @@ exports.getMyTransactions = async (req, res) => {
 
         const filter = isSuperadmin
             ? {}
-            : { seller: req.user._id, status: { $in: ['paid', 'refunded'] } };
+            : { seller: req.user._id };
 
         if (req.query.status) {
             filter.status = req.query.status;

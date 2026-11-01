@@ -21,6 +21,9 @@ backend/data/
 backend/uploads/
 
 # ── Debug / scratch / temp files ──────────────────────────────
+tmp/
+*.bak
+*.backup
 backend/debug_*.json
 backend/repair_output.txt
 backend/permissions.txt

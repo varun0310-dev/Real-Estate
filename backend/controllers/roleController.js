@@ -1,4 +1,5 @@
 const Role = require('../models/Role');
+const { FIXED_ROLES, seedDefaultRoles } = require('../scripts/seedRoles');
 
 // GET /api/roles — list all roles
 exports.getAllRoles = async (req, res) => {
@@ -23,33 +24,11 @@ exports.getRoleById = async (req, res) => {
     }
 };
 
-// POST /api/roles — create a new role
+// POST /api/roles — disabled: roles are fixed (buyer, seller, superadmin)
 exports.createRole = async (req, res) => {
-    try {
-        const { name, description, permissions } = req.body;
-
-        if (!name || !name.trim()) {
-            return res.status(400).json({ message: 'Role name is required' });
-        }
-
-        const existing = await Role.findOne({ name: name.trim().toLowerCase() });
-        if (existing) {
-            return res.status(400).json({ message: 'A role with this name already exists' });
-        }
-
-        const role = new Role({
-            name: name.trim().toLowerCase(),
-            description: description || '',
-            permissions: permissions || [],
-            isSystem: false
-        });
-
-        await role.save();
-        res.status(201).json({ message: 'Role created successfully', role });
-    } catch (err) {
-        console.error('Error creating role:', err);
-        res.status(500).json({ message: 'Server error' });
-    }
+    return res.status(403).json({
+        message: 'Custom roles cannot be created. This project uses three fixed roles: Buyer, Seller, and Superadmin.',
+    });
 };
 
 // PUT /api/roles/:id — update a role
@@ -59,6 +38,13 @@ exports.updateRole = async (req, res) => {
         const role = await Role.findById(req.params.id);
 
         if (!role) return res.status(404).json({ message: 'Role not found' });
+
+        if (role.isSystem) {
+            if (description !== undefined) role.description = description;
+            if (status !== undefined) role.status = status;
+            await role.save();
+            return res.json({ message: 'System role details updated', role });
+        }
 
         if (name) role.name = name.trim().toLowerCase();
         if (description !== undefined) role.description = description;
@@ -94,24 +80,5 @@ exports.deleteRole = async (req, res) => {
     }
 };
 
-// Seed default system roles (called once on startup)
-exports.seedDefaultRoles = async () => {
-    try {
-        const defaults = [
-            { name: 'superadmin', description: 'Full access to all features', permissions: ['all'], isSystem: true },
-            { name: 'seller', description: 'Can manage own properties', permissions: ['properties.manage', 'profile.manage'], isSystem: true },
-            { name: 'buyer', description: 'Can browse and save properties', permissions: ['properties.view', 'profile.manage'], isSystem: true },
-        ];
-
-        for (const def of defaults) {
-            await Role.findOneAndUpdate(
-                { name: def.name },
-                def,
-                { upsert: true, new: true }
-            );
-        }
-        console.log('Default roles seeded');
-    } catch (err) {
-        console.error('Error seeding roles:', err);
-    }
-};
+exports.seedDefaultRoles = seedDefaultRoles;
+exports.FIXED_ROLES = FIXED_ROLES;

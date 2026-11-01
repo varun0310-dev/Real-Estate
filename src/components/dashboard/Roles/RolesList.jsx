@@ -78,14 +78,10 @@ const RolesList = () => {
             <div className="flex justify-between items-center mb-6">
                 <div>
                     <h2 className="text-xl font-bold text-[#1e1e2d]">Roles management</h2>
-                    <p className="text-sm text-gray-400 mt-1">Configure user roles and system permissions</p>
+                    <p className="text-sm text-gray-400 mt-1">
+                        Buyer, Seller, and Superadmin are fixed system roles for this project.
+                    </p>
                 </div>
-                <button
-                    className="bg-[#3f51b5] text-white px-5 py-2.5 rounded-xl font-bold text-sm shadow-[0_4px_16px_rgba(63,81,181,0.2)] hover:bg-[#334296] transition cursor-pointer"
-                    onClick={() => setShowAddForm(true)}
-                >
-                    Add New Role
-                </button>
             </div>
 
             <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
