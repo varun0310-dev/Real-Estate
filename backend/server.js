@@ -9,7 +9,30 @@ const connectDB = require('./config/db');
 dotenv.config();
 
 // Connect to MongoDB
-connectDB();
+// Initialize DB and then start the app
+(async () => {
+  try {
+    // Connect to MongoDB
+    await connectDB();
+
+    // Seed default roles and package settings after connection is ready
+    const { seedDefaultRoles } = require('./controllers/roleController');
+    const { seedPackageSettings } = require('./controllers/packageSettingsController');
+    await seedDefaultRoles();
+    await seedPackageSettings();
+
+    // Start subscription expiry cron
+    const { startSubscriptionCron } = require('./cron/subscriptionCron');
+    startSubscriptionCron();
+
+    // Start the HTTP server
+    const PORT = process.env.PORT || 3001;
+    server.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
+  } catch (err) {
+    console.error('🚨 Server startup error:', err);
+    process.exit(1);
+  }
+})();
 
 // Create app and server
 const app = express();
@@ -18,11 +41,20 @@ const server = http.createServer(app);
 // Initialize Socket.IO
 const io = new Server(server, {
     cors: {
-        origin: process.env.FRONTEND_URL || 'http://localhost:5173',
-        methods: ["GET", "POST"],
+        origin: (origin, callback) => {
+            // Allow requests with no origin (like mobile apps, curl, postman) or localhost/vite dev servers
+            if (!origin || origin.includes('localhost') || origin.includes('127.0.0.1') || origin === process.env.FRONTEND_URL) {
+                callback(null, true);
+            } else {
+                callback(null, true);
+            }
+        },
+        methods: ["GET", "POST", "PATCH", "DELETE"],
         credentials: true
     }
 });
+
+app.set('io', io);
 
 const { initializeChatSocket } = require('./sockets/chat.socket');
 initializeChatSocket(io);
@@ -51,6 +83,7 @@ app.use('/api/subscriptions', require('./routes/subscriptionRoutes'));
 app.use('/api/package-settings', require('./routes/packageSettingsRoutes'));
 app.use('/api/coupons', require('./routes/couponRoutes'));
 app.use('/api/payments', require('./routes/paymentRoutes'));
+app.use('/api/dashboard', require('./routes/dashboardRoutes'));
 console.log('Coupon & payment routes registered');
 console.log('Amenity routes registered');
 console.log('Category routes registered');
@@ -58,16 +91,7 @@ console.log('Settings routes registered');
 console.log('Role & Admin routes registered');
 
 // Seed default roles
-const { seedDefaultRoles } = require('./controllers/roleController');
-seedDefaultRoles();
-
-const { seedPackageSettings } = require('./controllers/packageSettingsController');
-seedPackageSettings();
+// Seeding moved to async init above
 
 // Start subscription expiry cron
-const { startSubscriptionCron } = require('./cron/subscriptionCron');
-startSubscriptionCron();
-
-// Start server
-const PORT = process.env.PORT || 3001;
-server.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
+// Server startup handled in async IIFE above

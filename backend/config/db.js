@@ -2,10 +2,17 @@ const mongoose = require('mongoose');
 const User = require('../models/User');
 const bcrypt = require('bcryptjs');
 
+// Prevent Mongoose from buffering operations when the DB is unavailable.
+mongoose.set('bufferCommands', false);
+
 const connectDB = async () => {
     try {
-        await mongoose.connect(process.env.MONGO_URI);
-        console.log("MongoDB Connected");
+        const uri = process.env.MONGO_URI;
+        if (!uri) {
+            throw new Error('MONGO_URI not defined in .env');
+        }
+await mongoose.connect(uri, { serverSelectionTimeoutMS: 5000 });
+        console.log('✅ MongoDB Connected');
 
         // Auto-create Super Admin
         const adminEmail = process.env.ADMIN_EMAIL || 'admin@gmail.com';
@@ -32,7 +39,7 @@ const connectDB = async () => {
             console.log('Super Admin already exists');
         }
     } catch (err) {
-        console.error("DB Connection Failed:", err.message);
+        console.error('DB Connection Failed:', err.message);
         process.exit(1);
     }
 };

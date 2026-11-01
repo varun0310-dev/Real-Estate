@@ -92,6 +92,16 @@ const NavIcon = ({ name, isActive }) => {
         <path d="M6 15H10" stroke={color} strokeWidth="2" strokeLinecap="round" />
       </svg>
     ),
+    Messages: (
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+        <path d="M21 11.5C21.0034 12.8199 20.6951 14.1219 20.1002 15.3C19.3944 16.7118 18.3098 17.8992 16.9674 18.7293C15.6251 19.5594 14.0782 19.9994 12.5 20C11.1801 20.0035 9.87812 19.6951 8.7 19.1002L3 21L4.8998 15.3C4.30488 14.1219 3.99656 12.8199 4 11.5C4.00061 9.92179 4.44061 8.37488 5.27072 7.03258C6.10083 5.69028 7.28825 4.6056 8.7 3.8998C9.87812 3.30488 11.1801 2.99656 12.5 3H13C15.0843 3.115 17.053 3.99479 18.5291 5.47086C20.0052 6.94693 20.885 8.91569 21 11V11.5Z" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+    ),
+    "My Favorites": (
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+        <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+    ),
     Subscriptions: (
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
         <path d="M12 2V22" stroke={color} strokeWidth="2" strokeLinecap="round" />
@@ -126,10 +136,12 @@ const navItems = [
   { name: "Amenities", path: "/dashboard/amenities" },
   { name: "My Properties", path: "/dashboard/my-properties" },
   { name: "My Package", path: "/dashboard/package", sellerOnly: true },
-  { name: "Transactions", path: "/dashboard/transactions", sellerOnly: true },
+  { name: "Transactions", path: "/dashboard/transactions" },
   { name: "Subscriptions", path: "/dashboard/subscriptions", superadminOnly: true },
-  { name: "Conversations", path: "/dashboard/conversations" },
-  { name: "Coupon Management", path: "/dashboard/coupons" },
+  { name: "Messages", path: "/dashboard/messages" },
+  { name: "My Favorites", path: "/dashboard/favorites" },
+  { name: "Conversations", path: "/dashboard/conversations", superadminOnly: true },
+  { name: "Coupon Management", path: "/dashboard/coupons", superadminOnly: true },
   {
     name: "Users & Roles",
     children: [
@@ -184,17 +196,14 @@ const Sidebar = ({ onNavigate, isCollapsed, setIsCollapsed, userType }) => {
 
   const filteredNavItems = navItems.filter((item) => {
     if (userType === "buyer") {
-      return !["Categories", "Amenities", "My Properties", "My Package", "Transactions", "Subscriptions", "Settings", "Users & Roles", "Conversations", "Coupon Management"].includes(item.name);
+      return ["Dashboard", "Messages", "My Favorites", "My Profile", "Logout"].includes(item.name);
     }
-    if (item.sellerOnly && userType !== "seller") {
-      return false;
+    if (userType === "seller") {
+      return ["Dashboard", "My Properties", "My Package", "Transactions", "Messages", "My Favorites", "My Profile", "Logout"].includes(item.name);
     }
-    if (item.superadminOnly && userType !== "superadmin") {
-      return false;
-    }
-    // Users & Roles, Settings, Conversations, Coupon Management only visible to superadmin
-    if ((item.name === "Users & Roles" || item.name === "Settings" || item.name === "Conversations" || item.name === "Coupon Management") && userType !== "superadmin") {
-      return false;
+    if (userType === "superadmin") {
+      // Hide My Package, Messages, Transactions, and My Favorites for Super Admin
+      return !["My Package", "Messages", "Transactions", "My Favorites"].includes(item.name);
     }
     return true;
   });

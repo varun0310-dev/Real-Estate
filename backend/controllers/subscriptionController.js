@@ -116,6 +116,7 @@ async function completeSellerSubscription({
     let amountPaid = baseAmount;
     let appliedCouponCode = null;
     let couponId = null;
+    let referrerSellerId = null;
 
     if (couponCode && String(couponCode).trim()) {
         const validation = await validateCouponForCheckout({
@@ -133,6 +134,7 @@ async function completeSellerSubscription({
         amountPaid = validation.finalAmount;
         appliedCouponCode = validation.code;
         couponId = validation.couponId;
+        referrerSellerId = validation.referrerSellerId || null;
     }
 
     if (clientAmountPaid !== undefined && clientAmountPaid !== null) {
@@ -162,11 +164,24 @@ async function completeSellerSubscription({
         expiryDate,
         amountPaid,
         couponCode: appliedCouponCode,
+        referralSeller: referrerSellerId,
     });
     await subscription.save();
 
     if (couponId) {
-        await Coupon.findByIdAndUpdate(couponId, { $inc: { usageCount: 1 } });
+        await Coupon.findByIdAndUpdate(couponId, {
+            $inc: { usageCount: 1 },
+            $push: {
+                usedBy: {
+                    seller: sellerId,
+                    usedAt: new Date(),
+                    plan,
+                    billingCycle,
+                    amountPaid,
+                    discountAmount: baseAmount - amountPaid,
+                },
+            },
+        });
     }
 
     const { subject, html } = getSubscriptionWelcomeEmail({

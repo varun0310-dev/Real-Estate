@@ -1,5 +1,21 @@
 const mongoose = require('mongoose');
 
+const couponUsageSchema = new mongoose.Schema({
+    seller: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
+        required: true,
+    },
+    usedAt: {
+        type: Date,
+        default: Date.now,
+    },
+    plan: String,
+    billingCycle: String,
+    amountPaid: Number,
+    discountAmount: Number,
+}, { _id: false });
+
 const couponSchema = new mongoose.Schema({
     title: { 
         type: String, 
@@ -12,6 +28,11 @@ const couponSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId, 
         ref: 'User', 
         required: [true, 'Seller selection is required']
+    },
+    couponType: {
+        type: String,
+        enum: ['referral', 'general'],
+        default: 'referral',
     },
     discountType: { 
         type: String, 
@@ -26,6 +47,24 @@ const couponSchema = new mongoose.Schema({
         required: [true, 'Discount value is required'],
         min: [1, 'Discount value must be at least 1']
     },
+    applicablePlans: {
+        type: [String],
+        enum: ['standard', 'premium'],
+        default: ['standard', 'premium'], // empty or both means all paid packages
+    },
+    minPurchaseAmount: {
+        type: Number,
+        default: 0,
+        min: 0,
+    },
+    maxUses: {
+        type: Number,
+        default: null, // null = unlimited
+    },
+    maxUsesPerSeller: {
+        type: Number,
+        default: 1, // each referred seller can only use this coupon once
+    },
     status: {
         type: String,
         enum: ['active', 'inactive'],
@@ -35,6 +74,7 @@ const couponSchema = new mongoose.Schema({
         type: Number,
         default: 0
     },
+    usedBy: [couponUsageSchema],
     expiresAt: {
         type: Date,
         default: null,

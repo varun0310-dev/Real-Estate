@@ -17,7 +17,6 @@ const SUPERADMIN_ONLY_ROUTES = [
 
 const SELLER_ONLY_ROUTES = [
   '/dashboard/package',
-  '/dashboard/transactions',
 ];
 
 const DashboardLayout = () => {
@@ -102,7 +101,7 @@ const DashboardLayout = () => {
         onNavigate={handleNavigation} 
         isCollapsed={isCollapsed} 
         setIsCollapsed={setIsCollapsed} 
-        userType={profile?.userType}
+        userType={profile?.userType || profile?.role}
       />
 
       {/* Main content area */}

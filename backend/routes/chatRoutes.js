@@ -12,6 +12,9 @@ router.get('/conversations', authenticate, chatController.getMyConversations);
 // Get messages for a conversation
 router.get('/conversations/:conversationId/messages', authenticate, chatController.getMessages);
 
+// Send message (REST fallback & direct sending)
+router.post('/conversations/:conversationId/messages', authenticate, chatController.sendMessage);
+
 // Mark messages as read
 router.patch('/conversations/:conversationId/read', authenticate, chatController.markMessagesRead);
 

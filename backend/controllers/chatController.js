@@ -23,24 +23,33 @@ exports.createOrGetConversation = async (req, res) => {
             propertyId,
             buyerId,
             sellerId
-        }).populate('propertyId', 'title images price')
-          .populate('sellerId', 'name profileImage companyName')
-          .populate('buyerId', 'name profileImage');
+        }).populate('propertyId', 'title images price address propertyType')
+          .populate('sellerId', 'name profileImage companyName email phone userType')
+          .populate('buyerId', 'name profileImage email phone userType');
 
-        // Create new if not exists
-        if (!conversation) {
+        // If conversation existed but was deleted or inactive, restore it
+        if (conversation) {
+            if (conversation.isDeleted || conversation.status !== 'active') {
+                conversation.isDeleted = false;
+                conversation.status = 'active';
+                await conversation.save();
+            }
+        } else {
+            // Create new conversation
             conversation = new Conversation({
                 propertyId,
                 buyerId,
-                sellerId
+                sellerId,
+                status: 'active',
+                isDeleted: false
             });
             await conversation.save();
             
             // Re-populate for consistency
             conversation = await Conversation.findById(conversation._id)
-                .populate('propertyId', 'title images price')
-                .populate('sellerId', 'name profileImage companyName')
-                .populate('buyerId', 'name profileImage');
+                .populate('propertyId', 'title images price address propertyType')
+                .populate('sellerId', 'name profileImage companyName email phone userType')
+                .populate('buyerId', 'name profileImage email phone userType');
         }
 
         res.status(200).json({ conversation });
@@ -53,25 +62,21 @@ exports.createOrGetConversation = async (req, res) => {
 exports.getMyConversations = async (req, res) => {
     try {
         const userId = req.user._id;
-        const userType = req.user.userType;
         
-        let query = { isDeleted: { $ne: true } };
-        
-        if (userType === 'buyer') {
-            // Buyer: show only conversations they started
-            query.buyerId = userId;
-        } else if (userType === 'seller' || userType === 'superadmin') {
-            // Sellers AND admins (who post properties) appear as the seller in conversations
-            query.sellerId = userId;
-        } else {
-            return res.status(403).json({ message: 'Invalid user type for chat' });
-        }
+        // User should see all active conversations they participate in (as buyer or seller)
+        const query = {
+            isDeleted: { $ne: true },
+            $or: [
+                { buyerId: userId },
+                { sellerId: userId }
+            ]
+        };
 
         const conversations = await Conversation.find(query)
-            .populate('propertyId', 'title images price address')
-            .populate('sellerId', 'name profileImage companyName userType')
-            .populate('buyerId', 'name profileImage userType')
-            .sort({ lastMessageAt: -1 });
+            .populate('propertyId', 'title images price address propertyType')
+            .populate('sellerId', 'name profileImage companyName email userType')
+            .populate('buyerId', 'name profileImage email userType')
+            .sort({ lastMessageAt: -1, updatedAt: -1 });
 
         res.status(200).json({ conversations });
     } catch (err) {
@@ -84,7 +89,7 @@ exports.getMessages = async (req, res) => {
     try {
         const { conversationId } = req.params;
         const page = parseInt(req.query.page) || 1;
-        const limit = parseInt(req.query.limit) || 30;
+        const limit = parseInt(req.query.limit) || 50;
         const skip = (page - 1) * limit;
 
         const conversation = await Conversation.findById(conversationId);
@@ -116,6 +121,73 @@ exports.getMessages = async (req, res) => {
     }
 };
 
+exports.sendMessage = async (req, res) => {
+    try {
+        const { conversationId } = req.params;
+        const { text, messageType = 'text', attachments = [] } = req.body;
+        const senderId = req.user._id;
+
+        if (!text || text.trim() === '') {
+            return res.status(400).json({ message: 'Message text is required' });
+        }
+
+        const conversation = await Conversation.findById(conversationId);
+        if (!conversation) return res.status(404).json({ message: 'Conversation not found' });
+
+        // Determine receiver and ensure participant
+        let receiverId = null;
+        if (conversation.buyerId.toString() === senderId.toString()) {
+            receiverId = conversation.sellerId;
+            conversation.sellerUnreadCount = (conversation.sellerUnreadCount || 0) + 1;
+        } else if (conversation.sellerId.toString() === senderId.toString()) {
+            receiverId = conversation.buyerId;
+            conversation.buyerUnreadCount = (conversation.buyerUnreadCount || 0) + 1;
+        } else if (req.user.userType === 'superadmin' || req.user.role === 'superadmin') {
+            // Admin sending on behalf
+            receiverId = conversation.buyerId;
+        } else {
+            return res.status(403).json({ message: 'Not authorized to send messages in this conversation' });
+        }
+
+        // If conversation was marked deleted/inactive, reactivate it
+        if (conversation.isDeleted || conversation.status !== 'active') {
+            conversation.isDeleted = false;
+            conversation.status = 'active';
+        }
+
+        // Save message
+        const newMessage = new Message({
+            conversationId,
+            senderId,
+            receiverId,
+            text: text.trim(),
+            messageType,
+            attachments
+        });
+        await newMessage.save();
+
+        // Update conversation
+        conversation.lastMessage = text.trim().substring(0, 80);
+        conversation.lastMessageAt = new Date();
+        await conversation.save();
+
+        await newMessage.populate('senderId', 'name profileImage userType');
+
+        // Broadcast via Socket.IO if available
+        const io = req.app.get('io');
+        if (io) {
+            io.to(`conversation:${conversationId}`).emit('new_message', newMessage);
+            io.to(`user:${receiverId}`).emit('new_message', newMessage);
+            io.to(`user:${senderId}`).emit('new_message', newMessage);
+        }
+
+        res.status(201).json({ message: newMessage });
+    } catch (err) {
+        console.error("Send message error:", err);
+        res.status(500).json({ message: 'Server error sending message' });
+    }
+};
+
 exports.markMessagesRead = async (req, res) => {
     try {
         const { conversationId } = req.params;
@@ -134,7 +206,6 @@ exports.markMessagesRead = async (req, res) => {
         if (conversation.buyerId.toString() === userId.toString()) {
             conversation.buyerUnreadCount = 0;
         } else if (conversation.sellerId.toString() === userId.toString()) {
-            // Covers both seller and superadmin who posted the property
             conversation.sellerUnreadCount = 0;
         }
         await conversation.save();

@@ -24,10 +24,14 @@ const initializeChatSocket = (io) => {
     io.on('connection', (socket) => {
         console.log(`Socket connected: ${socket.id} (User: ${socket.user.name})`);
 
+        // Join user's personal room for direct notification broadcasts
+        socket.join(`user:${socket.user._id}`);
+
         // Join conversation room
         socket.on('join_conversation', async (conversationId) => {
             try {
-                // Verify user belongs to this conversation or is admin
+                if (!conversationId) return;
+
                 const conversation = await Conversation.findById(conversationId);
                 if (!conversation) return;
 
@@ -47,7 +51,9 @@ const initializeChatSocket = (io) => {
 
         // Leave conversation room
         socket.on('leave_conversation', (conversationId) => {
-            socket.leave(`conversation:${conversationId}`);
+            if (conversationId) {
+                socket.leave(`conversation:${conversationId}`);
+            }
         });
 
         // Handle sending a message
@@ -59,19 +65,27 @@ const initializeChatSocket = (io) => {
                 if (!text || text.trim() === '') return;
 
                 const conversation = await Conversation.findById(conversationId);
-                if (!conversation || conversation.status !== 'active') return;
+                if (!conversation) return;
 
                 // Determine receiver
                 let receiverId = null;
                 if (conversation.buyerId.toString() === socket.user._id.toString()) {
                     receiverId = conversation.sellerId;
-                    conversation.sellerUnreadCount += 1;
+                    conversation.sellerUnreadCount = (conversation.sellerUnreadCount || 0) + 1;
                 } else if (conversation.sellerId.toString() === socket.user._id.toString()) {
                     receiverId = conversation.buyerId;
-                    conversation.buyerUnreadCount += 1;
+                    conversation.buyerUnreadCount = (conversation.buyerUnreadCount || 0) + 1;
+                } else if (socket.user.userType === 'superadmin' || socket.user.role === 'superadmin') {
+                    receiverId = conversation.buyerId;
                 } else {
                     // Not a participant
                     return;
+                }
+
+                // If conversation was marked deleted/inactive, reactivate it
+                if (conversation.isDeleted || conversation.status !== 'active') {
+                    conversation.isDeleted = false;
+                    conversation.status = 'active';
                 }
 
                 // Save message
@@ -86,15 +100,17 @@ const initializeChatSocket = (io) => {
                 await newMessage.save();
 
                 // Update conversation
-                conversation.lastMessage = text.trim().substring(0, 50);
+                conversation.lastMessage = text.trim().substring(0, 80);
                 conversation.lastMessageAt = new Date();
                 await conversation.save();
 
-                // Populate sender details for the broadcast
+                // Populate sender details for broadcast
                 await newMessage.populate('senderId', 'name profileImage userType');
 
-                // Emit to room
+                // Emit to conversation room AND both personal user rooms for 100% reliable reception
                 io.to(`conversation:${conversationId}`).emit('new_message', newMessage);
+                io.to(`user:${receiverId}`).emit('new_message', newMessage);
+                io.to(`user:${socket.user._id}`).emit('new_message', newMessage);
 
             } catch (err) {
                 console.error("Send message error:", err);
@@ -103,16 +119,20 @@ const initializeChatSocket = (io) => {
 
         // Handle typing events
         socket.on('typing', (conversationId) => {
-            socket.to(`conversation:${conversationId}`).emit('typing', {
-                userId: socket.user._id,
-                name: socket.user.name
-            });
+            if (conversationId) {
+                socket.to(`conversation:${conversationId}`).emit('typing', {
+                    userId: socket.user._id,
+                    name: socket.user.name
+                });
+            }
         });
 
         socket.on('stop_typing', (conversationId) => {
-            socket.to(`conversation:${conversationId}`).emit('stop_typing', {
-                userId: socket.user._id
-            });
+            if (conversationId) {
+                socket.to(`conversation:${conversationId}`).emit('stop_typing', {
+                    userId: socket.user._id
+                });
+            }
         });
 
         socket.on('disconnect', () => {

@@ -6,6 +6,12 @@ import { FiMessageSquare, FiX, FiChevronDown } from 'react-icons/fi';
 import { formatDistanceToNow } from 'date-fns';
 import FloatingChat from './FloatingChat';
 
+const getAvatarUrl = (img) => {
+    if (!img) return null;
+    if (img.startsWith('http')) return img;
+    return `${API_URL}/${img.replace(/^\/+/, '')}`;
+};
+
 /**
  * SellerChatWidget – renders for seller / superadmin users.
  * Shows a floating "Inbox" bubble with total unread count.
@@ -54,6 +60,9 @@ export default function SellerChatWidget({ currentUser }) {
                 socket.on('connect', joinRooms);
 
                 const handleNewMessage = (msg) => {
+                    const senderId = (msg.senderId?._id || msg.senderId)?.toString();
+                    const myId = currentUser?._id?.toString();
+
                     setConversations((prev) => {
                         const newConvs = [...prev];
                         const idx = newConvs.findIndex((c) => c._id === msg.conversationId);
@@ -66,18 +75,25 @@ export default function SellerChatWidget({ currentUser }) {
 
                             // Increment unread only if not the active conversation
                             const current = activeConvRef.current;
-                            if (msg.senderId._id !== currentUser._id && (!current || current._id !== msg.conversationId)) {
+                            if (senderId !== myId && (!current || current._id !== msg.conversationId)) {
                                 newConvs[idx] = { ...newConvs[idx], sellerUnreadCount: (newConvs[idx].sellerUnreadCount || 0) + 1 };
                             }
 
                             const [moved] = newConvs.splice(idx, 1);
                             newConvs.unshift(moved);
+                        } else {
+                            // If it's a new conversation not in list, fetch updated conversations
+                            axios.get(`${API_URL}/api/chat/conversations`, {
+                                headers: { Authorization: `Bearer ${token}` }
+                            }).then((res) => {
+                                if (res.data?.conversations) setConversations(res.data.conversations);
+                            }).catch(() => {});
                         }
                         return newConvs;
                     });
 
                     // Update total unread badge
-                    if (msg.senderId._id !== currentUser._id) {
+                    if (senderId !== myId) {
                         const current = activeConvRef.current;
                         if (!current || current._id !== msg.conversationId) {
                             setTotalUnread((n) => n + 1);
@@ -172,8 +188,16 @@ export default function SellerChatWidget({ currentUser }) {
                                             >
                                                 {/* Avatar */}
                                                 <div className="w-11 h-11 rounded-full bg-gradient-to-br from-[#4960B2] to-[#6c7fcf] flex items-center justify-center flex-shrink-0 overflow-hidden shadow-sm">
-                                                    {hasPhoto
-                                                        ? <img src={`${API_URL}${buyer.profileImage}`} alt={buyer.name} className="w-full h-full object-cover" />
+                                                    {getAvatarUrl(buyer?.profileImage)
+                                                        ? <img 
+                                                            src={getAvatarUrl(buyer.profileImage)} 
+                                                            alt={buyer?.name || 'Buyer'} 
+                                                            className="w-full h-full object-cover" 
+                                                            onError={(e) => {
+                                                                e.target.onerror = null;
+                                                                e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(buyer?.name || 'Buyer')}&background=4960B2&color=fff`;
+                                                            }}
+                                                        />
                                                         : <span className="text-white font-bold text-base">{buyer?.name?.charAt(0).toUpperCase() || '?'}</span>
                                                     }
                                                 </div>

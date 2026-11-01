@@ -78,6 +78,11 @@ const subscriptionSchema = new mongoose.Schema({
         trim: true,
         uppercase: true,
     },
+    referralSeller: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
+        default: null,
+    },
 }, { timestamps: true });
 
 // Virtual: is currently active

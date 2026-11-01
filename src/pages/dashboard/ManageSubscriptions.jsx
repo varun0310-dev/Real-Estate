@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import axios from 'axios';
 import { API_URL } from '../../config';
 import {
@@ -143,7 +144,16 @@ const generateInvoicePDF = (payment) => {
 };
 
 const ManageSubscriptions = () => {
-    const [activeTab, setActiveTab] = useState('subscriptions'); // 'subscriptions' | 'payments'
+    const [searchParams, setSearchParams] = useSearchParams();
+    const initialTab = searchParams.get('tab') === 'payments' ? 'payments' : 'subscriptions';
+    const [activeTab, setActiveTab] = useState(initialTab); // 'subscriptions' | 'payments'
+
+    useEffect(() => {
+        const tabParam = searchParams.get('tab');
+        if (tabParam === 'payments' || tabParam === 'subscriptions') {
+            setActiveTab(tabParam);
+        }
+    }, [searchParams]);
     const [subscriptions, setSubscriptions] = useState([]);
     const [payments, setPayments] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -275,7 +285,11 @@ const ManageSubscriptions = () => {
                 ].map((tab) => (
                     <button
                         key={tab.key}
-                        onClick={() => { setActiveTab(tab.key); setExpandedId(null); }}
+                        onClick={() => {
+                            setActiveTab(tab.key);
+                            setExpandedId(null);
+                            setSearchParams({ tab: tab.key });
+                        }}
                         className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-bold transition-all ${
                             activeTab === tab.key
                                 ? 'bg-white text-[#4960B2] shadow-sm'

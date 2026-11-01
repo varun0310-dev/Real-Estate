@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
-import { FiX, FiLock, FiShield } from 'react-icons/fi';
+import { FiX, FiLock, FiShield, FiCheck, FiCopy } from 'react-icons/fi';
 import { API_URL } from '../../config';
 
 const formatInr = (n) => `₹${Number(n || 0).toLocaleString('en-IN')}`;
@@ -31,6 +31,7 @@ const loadRazorpayScript = () => new Promise((resolve) => {
 const CheckoutPaymentModal = ({
     open,
     onClose,
+    plan,
     planKey,
     planName,
     billingCycle,
@@ -39,12 +40,14 @@ const CheckoutPaymentModal = ({
 }) => {
     const [billingName, setBillingName] = useState('');
     const [billingEmail, setBillingEmail] = useState('');
+    const [billingPhone, setBillingPhone] = useState('');
     const [couponInput, setCouponInput] = useState('');
     const [appliedCoupon, setAppliedCoupon] = useState(null);
     const [couponError, setCouponError] = useState('');
     const [couponLoading, setCouponLoading] = useState(false);
     const [payLoading, setPayLoading] = useState(false);
     const [payError, setPayError] = useState('');
+    const [cardCopied, setCardCopied] = useState(false);
 
     const discountAmount = appliedCoupon?.discountAmount ?? 0;
     const finalAmount = appliedCoupon?.finalAmount ?? baseAmount;
@@ -65,6 +68,7 @@ const CheckoutPaymentModal = ({
                 const u = res.data.user;
                 if (u?.name) setBillingName(u.name);
                 if (u?.email) setBillingEmail(u.email);
+                if (u?.phone) setBillingPhone(u.phone);
             })
             .catch(() => {});
     }, [open]);
@@ -162,6 +166,7 @@ const CheckoutPaymentModal = ({
                 prefill: {
                     name: billingName,
                     email: billingEmail,
+                    contact: billingPhone,
                 },
                 theme: { color: '#4960B2' },
                 handler: async (response) => {
@@ -205,6 +210,12 @@ const CheckoutPaymentModal = ({
         }
     };
 
+    const handleCopyTestCard = () => {
+        navigator.clipboard.writeText('4100280000001007');
+        setCardCopied(true);
+        setTimeout(() => setCardCopied(false), 2500);
+    };
+
     return (
         <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/45 backdrop-blur-sm">
             <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl overflow-hidden border border-gray-100">
@@ -221,13 +232,13 @@ const CheckoutPaymentModal = ({
                     </button>
                 </div>
 
-                <div className="grid md:grid-cols-2 max-h-[85vh] overflow-y-auto md:overflow-hidden">
-                    <div className="p-6 md:overflow-y-auto border-b md:border-b-0 md:border-r border-gray-100 space-y-5">
+                <div className="grid md:grid-cols-2 max-h-[85vh] md:max-h-[580px] overflow-hidden">
+                    <div className="p-6 overflow-y-auto space-y-4 border-b md:border-b-0 md:border-r border-gray-100">
                         <div>
-                            <p className="text-xs font-bold uppercase tracking-wider text-gray-400 mb-3">Billing</p>
+                            <p className="text-xs font-bold uppercase tracking-wider text-gray-400 mb-2">Billing details</p>
                             <div className="space-y-3">
                                 <div>
-                                    <label className="text-xs font-semibold text-gray-600">Name</label>
+                                    <label className="text-xs font-semibold text-gray-600">Full name</label>
                                     <input
                                         type="text"
                                         value={billingName}
@@ -260,7 +271,7 @@ const CheckoutPaymentModal = ({
                                         if (appliedCoupon) resetCoupon();
                                     }}
                                     placeholder="Enter code"
-                                    className="flex-1 px-4 py-2.5 rounded-xl border border-gray-200 bg-gray-50 focus:bg-white focus:border-[#4960B2] focus:ring-2 focus:ring-[#4960B2]/20 text-sm"
+                                    className="flex-1 px-4 py-2.5 rounded-xl border border-gray-200 bg-gray-50 focus:bg-white focus:border-[#4960B2] focus:ring-2 focus:ring-[#4960B2]/20 text-sm font-mono uppercase"
                                 />
                                 <button
                                     type="button"
@@ -277,9 +288,52 @@ const CheckoutPaymentModal = ({
                             )}
                         </div>
 
-                        <p className="text-xs text-gray-500 leading-relaxed">
-                            Card and UPI details are collected in the Razorpay popup. Use Razorpay test cards in test mode (e.g. 4111 1111 1111 1111).
-                        </p>
+                        {/* Razorpay Test Mode Helper Card */}
+                        <div className="rounded-xl border border-blue-200 bg-blue-50/70 p-3.5 text-xs text-gray-700 space-y-2">
+                            <div className="flex items-center justify-between font-bold text-[#4960B2]">
+                                <span className="flex items-center gap-1.5">
+                                    <FiShield size={13} /> Razorpay Test Mode Credentials
+                                </span>
+                                <span className="bg-blue-100 text-[#4960B2] text-[10px] font-black px-2 py-0.5 rounded-full uppercase">
+                                    Domestic
+                                </span>
+                            </div>
+
+                            <p className="text-[11px] text-gray-600 leading-relaxed">
+                                Indian Razorpay accounts reject international cards (like <code className="bg-red-50 text-red-600 px-1 py-0.5 rounded font-mono">4111...</code>). Use Razorpay's <strong>Domestic Indian test card</strong>:
+                            </p>
+
+                            <div className="flex items-center justify-between bg-white rounded-lg px-2.5 py-1.5 border border-blue-100 font-mono text-xs">
+                                <span className="font-bold text-gray-800">4100 2800 0000 1007</span>
+                                <button
+                                    type="button"
+                                    onClick={handleCopyTestCard}
+                                    className="text-[11px] text-[#4960B2] hover:underline font-bold cursor-pointer inline-flex items-center gap-1"
+                                >
+                                    {cardCopied ? (
+                                        <>
+                                            <FiCheck size={12} className="text-emerald-600" />
+                                            <span className="text-emerald-600">Copied!</span>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <FiCopy size={12} />
+                                            <span>Copy</span>
+                                        </>
+                                    )}
+                                </button>
+                            </div>
+
+                            <div className="grid grid-cols-3 gap-2 text-[10px] text-gray-600 bg-white/70 p-1.5 rounded-lg border border-blue-100">
+                                <div><strong>Expiry:</strong> 12/28</div>
+                                <div><strong>CVV:</strong> 123</div>
+                                <div><strong>OTP:</strong> 1234</div>
+                            </div>
+
+                            <p className="text-[10px] text-gray-500">
+                                💡 <em>Or test with <strong>UPI</strong> (enter <code className="bg-gray-100 px-1 rounded font-mono">test@upi</code>) or <strong>Netbanking</strong> and click Success!</em>
+                            </p>
+                        </div>
                     </div>
 
                     <div className="p-6 md:overflow-y-auto bg-[#fafbff] flex flex-col">
@@ -321,7 +375,7 @@ const CheckoutPaymentModal = ({
                             type="button"
                             disabled={payLoading}
                             onClick={handleSubscribe}
-                            className="w-full py-3.5 rounded-xl bg-gradient-to-r from-[#4960B2] to-[#3b4f98] text-white font-black text-sm flex items-center justify-center gap-2 hover:opacity-95 disabled:opacity-60 mt-5"
+                            className="w-full py-3.5 rounded-xl bg-gradient-to-r from-[#4960B2] to-[#3b4f98] text-white font-black text-sm flex items-center justify-center gap-2 hover:opacity-95 disabled:opacity-60 mt-5 cursor-pointer"
                         >
                             <FiLock size={16} />
                             {payLoading
@@ -338,4 +392,3 @@ const CheckoutPaymentModal = ({
 };
 
 export default CheckoutPaymentModal;
-

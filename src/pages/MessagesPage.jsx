@@ -6,6 +6,12 @@ import ChatWindow from '../components/chat/ChatWindow';
 import { formatDistanceToNow } from 'date-fns';
 import socketService from '../services/socket';
 
+const getAvatarUrl = (img) => {
+    if (!img) return null;
+    if (img.startsWith('http')) return img;
+    return `${API_URL}/${img.replace(/^\/+/, '')}`;
+};
+
 export default function MessagesPage() {
     const [conversations, setConversations] = useState([]);
     const [activeConversation, setActiveConversation] = useState(null);
@@ -173,8 +179,16 @@ export default function MessagesPage() {
                                         className={`p-4 border-b border-gray-50 cursor-pointer transition-colors flex items-center gap-3 ${isActive ? 'bg-[#f0f4ff]' : 'hover:bg-gray-50'}`}
                                     >
                                         <div className="relative w-11 h-11 flex-shrink-0 rounded-full overflow-hidden">
-                                            {hasPhoto ? (
-                                                <img src={`${API_URL}${otherUser.profileImage}`} alt={otherUser.name} className="w-full h-full object-cover" />
+                                            {getAvatarUrl(otherUser?.profileImage) ? (
+                                                <img 
+                                                    src={getAvatarUrl(otherUser.profileImage)} 
+                                                    alt={otherUser.name} 
+                                                    className="w-full h-full object-cover" 
+                                                    onError={(e) => {
+                                                        e.target.onerror = null;
+                                                        e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(otherUser?.name || 'User')}&background=4960B2&color=fff`;
+                                                    }}
+                                                />
                                             ) : (
                                                 <div className="w-full h-full bg-gradient-to-br from-[#4960B2] to-[#6c7fcf] text-white flex items-center justify-center font-bold text-base shadow-sm">
                                                     {otherUser?.name?.charAt(0).toUpperCase() || '?'}

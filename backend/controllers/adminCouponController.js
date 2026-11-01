@@ -1,29 +1,50 @@
 const Coupon = require('../models/Coupon');
 const User = require('../models/User');
 
-// Create a new coupon
+// Create a new coupon (supports Referral Program & general coupons)
 exports.createCoupon = async (req, res) => {
     try {
-        const { title, sellerId, discountType, discountValue, expiresAt } = req.body;
+        const {
+            title,
+            sellerId,
+            couponType = 'referral',
+            discountType,
+            discountValue,
+            applicablePlans,
+            minPurchaseAmount,
+            maxUses,
+            maxUsesPerSeller,
+            expiresAt,
+        } = req.body;
 
         if (!title || !sellerId || !discountType || !discountValue) {
-            return res.status(400).json({ message: 'All fields are required' });
+            return res.status(400).json({ message: 'Title, seller, discount type and value are required.' });
         }
 
-        const existingCoupon = await Coupon.findOne({ title: title.toUpperCase() });
+        const cleanTitle = title.trim().toUpperCase();
+        const existingCoupon = await Coupon.findOne({ title: cleanTitle });
         if (existingCoupon) {
             return res.status(400).json({ message: 'Coupon title already exists. Please use a unique title.' });
         }
 
         const coupon = new Coupon({
-            title,
+            title: cleanTitle,
             sellerId,
+            couponType: couponType || 'referral',
             discountType,
-            discountValue,
+            discountValue: Number(discountValue),
+            applicablePlans: Array.isArray(applicablePlans) && applicablePlans.length > 0
+                ? applicablePlans
+                : ['standard', 'premium'],
+            minPurchaseAmount: Number(minPurchaseAmount) || 0,
+            maxUses: maxUses ? Number(maxUses) : null,
+            maxUsesPerSeller: maxUsesPerSeller ? Math.max(1, Number(maxUsesPerSeller)) : 1,
             expiresAt: expiresAt ? new Date(expiresAt) : null,
         });
 
         await coupon.save();
+        await coupon.populate('sellerId', 'name email companyName');
+
         res.status(201).json({ message: 'Coupon created successfully', coupon });
     } catch (err) {
         console.error('Create coupon error:', err);
@@ -34,7 +55,7 @@ exports.createCoupon = async (req, res) => {
     }
 };
 
-// Get all coupons with pagination
+// Get all coupons with pagination & populated referrer / usage info
 exports.getCoupons = async (req, res) => {
     try {
         const page = parseInt(req.query.page) || 1;
@@ -44,6 +65,7 @@ exports.getCoupons = async (req, res) => {
         const total = await Coupon.countDocuments();
         const coupons = await Coupon.find()
             .populate('sellerId', 'name email companyName')
+            .populate('usedBy.seller', 'name email companyName')
             .sort({ createdAt: -1 })
             .skip(skip)
             .limit(limit);
@@ -52,7 +74,7 @@ exports.getCoupons = async (req, res) => {
             coupons,
             currentPage: page,
             totalPages: Math.ceil(total / limit),
-            total
+            total,
         });
     } catch (err) {
         console.error('Get coupons error:', err);
@@ -64,7 +86,18 @@ exports.getCoupons = async (req, res) => {
 exports.updateCoupon = async (req, res) => {
     try {
         const { id } = req.params;
-        const { title, sellerId, discountType, discountValue, expiresAt } = req.body;
+        const {
+            title,
+            sellerId,
+            couponType,
+            discountType,
+            discountValue,
+            applicablePlans,
+            minPurchaseAmount,
+            maxUses,
+            maxUsesPerSeller,
+            expiresAt,
+        } = req.body;
 
         const coupon = await Coupon.findById(id);
         if (!coupon) {
@@ -75,22 +108,34 @@ exports.updateCoupon = async (req, res) => {
             return res.status(400).json({ message: 'Cannot edit coupon because it is already in use.' });
         }
 
-        if (title && title.toUpperCase() !== coupon.title) {
-            const existingCoupon = await Coupon.findOne({ title: title.toUpperCase() });
+        if (title && title.trim().toUpperCase() !== coupon.title) {
+            const cleanTitle = title.trim().toUpperCase();
+            const existingCoupon = await Coupon.findOne({ title: cleanTitle });
             if (existingCoupon) {
                 return res.status(400).json({ message: 'Coupon title already exists. Please use a unique title.' });
             }
-            coupon.title = title;
+            coupon.title = cleanTitle;
         }
 
         if (sellerId) coupon.sellerId = sellerId;
+        if (couponType) coupon.couponType = couponType;
         if (discountType) coupon.discountType = discountType;
-        if (discountValue) coupon.discountValue = discountValue;
+        if (discountValue) coupon.discountValue = Number(discountValue);
+        if (applicablePlans !== undefined) {
+            coupon.applicablePlans = Array.isArray(applicablePlans) && applicablePlans.length > 0
+                ? applicablePlans
+                : ['standard', 'premium'];
+        }
+        if (minPurchaseAmount !== undefined) coupon.minPurchaseAmount = Number(minPurchaseAmount) || 0;
+        if (maxUses !== undefined) coupon.maxUses = maxUses ? Number(maxUses) : null;
+        if (maxUsesPerSeller !== undefined) coupon.maxUsesPerSeller = maxUsesPerSeller ? Math.max(1, Number(maxUsesPerSeller)) : 1;
         if (expiresAt !== undefined) {
             coupon.expiresAt = expiresAt ? new Date(expiresAt) : null;
         }
 
         await coupon.save();
+        await coupon.populate('sellerId', 'name email companyName');
+
         res.status(200).json({ message: 'Coupon updated successfully', coupon });
     } catch (err) {
         console.error('Update coupon error:', err);
@@ -105,7 +150,7 @@ exports.updateCoupon = async (req, res) => {
 exports.deleteCoupon = async (req, res) => {
     try {
         const { id } = req.params;
-        
+
         const coupon = await Coupon.findById(id);
         if (!coupon) {
             return res.status(404).json({ message: 'Coupon not found' });
@@ -128,14 +173,14 @@ exports.toggleCouponStatus = async (req, res) => {
     try {
         const { id } = req.params;
         const coupon = await Coupon.findById(id);
-        
+
         if (!coupon) {
             return res.status(404).json({ message: 'Coupon not found' });
         }
 
         coupon.status = coupon.status === 'active' ? 'inactive' : 'active';
         await coupon.save();
-        
+
         res.status(200).json({ message: 'Coupon status updated successfully', coupon });
     } catch (err) {
         console.error('Toggle coupon status error:', err);

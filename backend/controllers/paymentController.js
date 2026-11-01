@@ -318,25 +318,58 @@ exports.verifyRazorpayPayment = async (req, res) => {
 
 /* ────────────────────────────────────────────
    GET /api/payments/my-transactions
-   Seller's own transaction history
+   Seller's own transaction history (or all transactions if superadmin)
    ──────────────────────────────────────────── */
 exports.getMyTransactions = async (req, res) => {
     try {
-        if (req.user.userType !== 'seller') {
-            return res.status(403).json({ message: 'Only sellers can view transactions.' });
+        const isSuperadmin = req.user.userType === 'superadmin' || req.user.role === 'superadmin';
+        const isSeller = req.user.userType === 'seller';
+
+        if (!isSuperadmin && !isSeller) {
+            return res.status(403).json({ message: 'Only sellers and superadmins can view transactions.' });
         }
 
         const page = Math.max(1, parseInt(req.query.page) || 1);
         const limit = Math.min(50, Math.max(1, parseInt(req.query.limit) || 10));
         const skip = (page - 1) * limit;
 
-        const filter = { seller: req.user._id, status: { $in: ['paid', 'refunded'] } };
+        const filter = isSuperadmin
+            ? {}
+            : { seller: req.user._id, status: { $in: ['paid', 'refunded'] } };
+
+        if (req.query.status) {
+            filter.status = req.query.status;
+        }
+
+        if (req.query.plan) {
+            filter.plan = req.query.plan;
+        }
+
+        if (isSuperadmin && req.query.search) {
+            const s = req.query.search.trim();
+            const matchedUsers = await User.find({
+                $or: [
+                    { name: { $regex: s, $options: 'i' } },
+                    { email: { $regex: s, $options: 'i' } },
+                    { companyName: { $regex: s, $options: 'i' } },
+                ],
+            }).select('_id');
+            const userIds = matchedUsers.map((u) => u._id);
+
+            filter.$or = [
+                { invoiceNumber: { $regex: s, $options: 'i' } },
+                { razorpayPaymentId: { $regex: s, $options: 'i' } },
+                { razorpayOrderId: { $regex: s, $options: 'i' } },
+                { seller: { $in: userIds } },
+            ];
+        }
 
         const [transactions, total] = await Promise.all([
             Payment.find(filter)
-                .sort({ paidAt: -1 })
+                .sort({ createdAt: -1 })
                 .skip(skip)
                 .limit(limit)
+                .populate('seller', 'name email phone companyName profileImage userType')
                 .populate('subscription', 'plan billingCycle status startDate expiryDate')
                 .lean(),
             Payment.countDocuments(filter),
@@ -344,6 +377,7 @@ exports.getMyTransactions = async (req, res) => {
 
         res.status(200).json({
             transactions,
+            isSuperadmin,
             pagination: {
                 page,
                 limit,
@@ -373,8 +407,8 @@ exports.getInvoice = async (req, res) => {
         }
 
         // Only the owner or superadmin can access the invoice
-        const isOwner = String(payment.seller._id) === String(req.user._id);
-        const isAdmin = req.user.userType === 'superadmin';
+        const isOwner = String(payment.seller?._id || payment.seller) === String(req.user._id);
+        const isAdmin = req.user.userType === 'superadmin' || req.user.role === 'superadmin';
         if (!isOwner && !isAdmin) {
             return res.status(403).json({ message: 'Access denied.' });
         }
@@ -402,13 +436,23 @@ exports.getAllPayments = async (req, res) => {
         if (req.query.plan) filter.plan = req.query.plan;
         if (req.query.seller) filter.seller = req.query.seller;
 
-        // Search by invoice number
+        // Search by invoice number, transaction ID, or seller name/email
         if (req.query.search) {
             const s = req.query.search.trim();
+            const matchedUsers = await User.find({
+                $or: [
+                    { name: { $regex: s, $options: 'i' } },
+                    { email: { $regex: s, $options: 'i' } },
+                    { companyName: { $regex: s, $options: 'i' } },
+                ],
+            }).select('_id');
+            const userIds = matchedUsers.map((u) => u._id);
+
             filter.$or = [
                 { invoiceNumber: { $regex: s, $options: 'i' } },
                 { razorpayPaymentId: { $regex: s, $options: 'i' } },
                 { razorpayOrderId: { $regex: s, $options: 'i' } },
+                { seller: { $in: userIds } },
             ];
         }
 
@@ -497,13 +541,16 @@ exports.getAllSubscriptions = async (req, res) => {
 
         const paymentMap = {};
         for (const p of payments) {
-            const key = `${p.seller}_${p.plan}_${p.billingCycle}`;
-            if (!paymentMap[key]) paymentMap[key] = p;
+            const fallbackKey = `${p.seller}_${p.plan}_${p.billingCycle}`;
+            if (!paymentMap[fallbackKey]) paymentMap[fallbackKey] = p;
+            if (p.subscription) {
+                paymentMap[String(p.subscription)] = p;
+            }
         }
 
         const enriched = subscriptions.map((sub) => {
-            const key = `${sub.seller?._id || sub.seller}_${sub.plan}_${sub.billingCycle}`;
-            return { ...sub, payment: paymentMap[key] || null };
+            const fallbackKey = `${sub.seller?._id || sub.seller}_${sub.plan}_${sub.billingCycle}`;
+            return { ...sub, payment: paymentMap[String(sub._id)] || paymentMap[fallbackKey] || null };
         });
 
         // Summary stats
