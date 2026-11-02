@@ -4,6 +4,8 @@ import { API_URL } from '../../config';
 import { FiMessageSquare, FiSearch, FiEye, FiX, FiTrash2 } from 'react-icons/fi';
 import { format, formatDistanceToNow } from 'date-fns';
 import toast from 'react-hot-toast';
+import UserAvatar from '../../components/common/UserAvatar';
+import PropertyThumbnail from '../../components/common/PropertyThumbnail';
 
 const ManageConversations = () => {
     const [conversations, setConversations] = useState([]);
@@ -173,13 +175,11 @@ const ManageConversations = () => {
                                             {/* Property */}
                                             <td className="px-6 py-4">
                                                 <div className="flex items-center gap-3">
-                                                    <div className="w-10 h-10 rounded-lg bg-[#4960B2]/10 flex items-center justify-center text-[#4960B2] flex-shrink-0 overflow-hidden">
-                                                        {property?.images?.[0] ? (
-                                                            <img src={`${API_URL}/uploads/${property.images[0]}`} alt={property.title} className="w-full h-full object-cover" />
-                                                        ) : (
-                                                            <span className="text-lg">🏠</span>
-                                                        )}
-                                                    </div>
+                                                    <PropertyThumbnail
+                                                        src={property?.images?.[0]}
+                                                        title={property?.title}
+                                                        size="w-10 h-10"
+                                                    />
                                                     <div>
                                                         <div className="text-sm font-semibold text-gray-800 truncate max-w-[180px]">
                                                             {property?.title || 'Unknown Property'}
@@ -193,13 +193,13 @@ const ManageConversations = () => {
 
                                             {/* Buyer */}
                                             <td className="px-6 py-4">
-                                                <div className="flex items-center gap-2">
-                                                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-emerald-400 to-emerald-600 flex items-center justify-center overflow-hidden flex-shrink-0">
-                                                        {hasBuyerPhoto
-                                                            ? <img src={`${API_URL}${buyer.profileImage}`} alt={buyer.name} className="w-full h-full object-cover" />
-                                                            : <span className="text-white text-xs font-bold">{buyer?.name?.charAt(0).toUpperCase() || '?'}</span>
-                                                        }
-                                                    </div>
+                                                <div className="flex items-center gap-2.5">
+                                                    <UserAvatar
+                                                        src={buyer?.profileImage}
+                                                        name={buyer?.name}
+                                                        role="buyer"
+                                                        size="w-8 h-8"
+                                                    />
                                                     <div>
                                                         <div className="text-sm font-medium text-gray-800">{buyer?.name || 'Unknown'}</div>
                                                         <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${getRoleBadge('buyer')}`}>BUYER</span>
@@ -209,13 +209,13 @@ const ManageConversations = () => {
 
                                             {/* Seller / Admin */}
                                             <td className="px-6 py-4">
-                                                <div className="flex items-center gap-2">
-                                                    <div className={`w-8 h-8 rounded-full flex items-center justify-center overflow-hidden flex-shrink-0 ${seller?.userType === 'superadmin' ? 'bg-gradient-to-br from-purple-400 to-purple-600' : 'bg-gradient-to-br from-blue-400 to-blue-600'}`}>
-                                                        {hasSellerPhoto
-                                                            ? <img src={`${API_URL}${seller.profileImage}`} alt={seller.name} className="w-full h-full object-cover" />
-                                                            : <span className="text-white text-xs font-bold">{seller?.name?.charAt(0).toUpperCase() || '?'}</span>
-                                                        }
-                                                    </div>
+                                                <div className="flex items-center gap-2.5">
+                                                    <UserAvatar
+                                                        src={seller?.profileImage}
+                                                        name={seller?.name}
+                                                        role={seller?.userType}
+                                                        size="w-8 h-8"
+                                                    />
                                                     <div>
                                                         <div className="text-sm font-medium text-gray-800">{seller?.name || 'Unknown'}</div>
                                                         <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${getRoleBadge(seller?.userType)}`}>

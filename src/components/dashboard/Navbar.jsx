@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";  // <-- Import useNavigate
 import axios from "axios";
 import Dummy from "@assets/loginlogo/dummy.png"; // ⬅️ adjust path if needed
 import { API_URL } from '../../config';
+import UserAvatar from "../common/UserAvatar";
 
 const Navbar = ({ title, onProfileClick }) => {
     const [dropdownOpen, setDropdownOpen] = useState(false);
@@ -90,11 +91,12 @@ const Navbar = ({ title, onProfileClick }) => {
                         className="flex items-center gap-2 cursor-pointer"
                         onClick={() => setDropdownOpen((prev) => !prev)}
                     >
-                        <img
-                            src={getProfileImage()}
-                            alt="Profile"
-                            className="w-10 h-10 rounded-full object-cover"
-                            onError={(e) => (e.target.src = Dummy)}
+                        <UserAvatar
+                            src={profile?.profileImage}
+                            name={profile?.name}
+                            role={profile?.userType}
+                            size="w-10 h-10"
+                            textSize="text-sm"
                         />
                         <div className="text-sm leading-tight">
                             <div className="text-[#0D1C44] font-medium">
